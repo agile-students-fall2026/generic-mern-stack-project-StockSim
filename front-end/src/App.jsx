@@ -7,7 +7,10 @@ import BadgeDetailPage from './pages/account/BadgeDetailPage.jsx'
 import ProfilePage from './pages/account/ProfilePage.jsx'
 import AuthPage from './pages/auth/AuthPage.jsx'
 import LeaderboardPage from './pages/leaderboard/LeaderboardPage.jsx'
+import GlossaryPage from './pages/learn/GlossaryPage.jsx'
+import LearnLayout from './pages/learn/LearnLayout.jsx'
 import LearnPage from './pages/learn/LearnPage.jsx'
+import LessonPage from './pages/learn/LessonPage.jsx'
 import MarketPage from './pages/market/MarketPage.jsx'
 import NotFoundPage from './pages/not-found/NotFoundPage.jsx'
 import HoldingDetailPage from './pages/portfolio/HoldingDetailPage.jsx'
@@ -39,7 +42,11 @@ function App() {
         <Route path="portfolio/transactions" element={<TransactionsPage />} />
         <Route path="portfolio/transactions/:transactionId" element={<TransactionDetailPage />} />
         <Route path="market" element={<MarketPage />} />
-        <Route path="learn" element={<LearnPage />} />
+        <Route path="learn" element={<LearnLayout />}>
+          <Route index element={<LearnPage />} />
+          <Route path="glossary" element={<GlossaryPage />} />
+          <Route path=":lessonId" element={<LessonPage />} />
+        </Route>
         <Route path="leaderboard" element={<LeaderboardPage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="account/profile" element={<ProfilePage />} />
