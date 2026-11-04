@@ -1,0 +1,185 @@
+{
+  "asOf": "2026-11-03T16:00:00-05:00",
+  "stocks": [
+    {
+      "symbol": "NOVA",
+      "name": "Nova Labs",
+      "sector": "Technology",
+      "description": "Nova Labs is a fictional investment in the technology sector, provided for trading practice.",
+      "price": 125,
+      "previousClose": 124.26,
+      "history": [
+        {"date": "2026-10-21", "price": 120.57},
+        {"date": "2026-10-22", "price": 121.1},
+        {"date": "2026-10-23", "price": 121.33},
+        {"date": "2026-10-24", "price": 121.08},
+        {"date": "2026-10-25", "price": 121.42},
+        {"date": "2026-10-26", "price": 121.34},
+        {"date": "2026-10-27", "price": 121.58},
+        {"date": "2026-10-28", "price": 123.8},
+        {"date": "2026-10-29", "price": 122.99},
+        {"date": "2026-10-30", "price": 122.26},
+        {"date": "2026-10-31", "price": 123.32},
+        {"date": "2026-11-01", "price": 123.93},
+        {"date": "2026-11-02", "price": 124.26},
+        {"date": "2026-11-03", "price": 125.0}
+      ],
+      "intraday": [
+        {"date": "2026-11-03 09:30", "price": 124.38},
+        {"date": "2026-11-03 11:30", "price": 124.64},
+        {"date": "2026-11-03 13:30", "price": 124.78},
+        {"date": "2026-11-03 16:00", "price": 125}
+      ]
+    },
+    {
+      "symbol": "PINE",
+      "name": "Pine Energy",
+      "sector": "Energy",
+      "description": "Pine Energy is a fictional investment in the energy sector, provided for trading practice.",
+      "price": 88,
+      "previousClose": 87.98,
+      "history": [
+        {"date": "2026-10-21", "price": 84.13},
+        {"date": "2026-10-22", "price": 85.27},
+        {"date": "2026-10-23", "price": 84.72},
+        {"date": "2026-10-24", "price": 84.13},
+        {"date": "2026-10-25", "price": 85.63},
+        {"date": "2026-10-26", "price": 85.89},
+        {"date": "2026-10-27", "price": 87.16},
+        {"date": "2026-10-28", "price": 85.93},
+        {"date": "2026-10-29", "price": 86.96},
+        {"date": "2026-10-30", "price": 87.37},
+        {"date": "2026-10-31", "price": 85.89},
+        {"date": "2026-11-01", "price": 87.23},
+        {"date": "2026-11-02", "price": 87.98},
+        {"date": "2026-11-03", "price": 88.0}
+      ],
+      "intraday": [
+        {"date": "2026-11-03 09:30", "price": 87.91},
+        {"date": "2026-11-03 11:30", "price": 87.85},
+        {"date": "2026-11-03 13:30", "price": 87.98},
+        {"date": "2026-11-03 16:00", "price": 88}
+      ]
+    },
+    {
+      "symbol": "MESA",
+      "name": "Mesa Health",
+      "sector": "Healthcare",
+      "description": "Mesa Health is a fictional investment in the healthcare sector, provided for trading practice.",
+      "price": 64,
+      "previousClose": 65.16,
+      "history": [
+        {"date": "2026-10-21", "price": 63.96},
+        {"date": "2026-10-22", "price": 65.16},
+        {"date": "2026-10-23", "price": 64.25},
+        {"date": "2026-10-24", "price": 64.43},
+        {"date": "2026-10-25", "price": 64.65},
+        {"date": "2026-10-26", "price": 65.2},
+        {"date": "2026-10-27", "price": 65.39},
+        {"date": "2026-10-28", "price": 64.75},
+        {"date": "2026-10-29", "price": 64.04},
+        {"date": "2026-10-30", "price": 65.3},
+        {"date": "2026-10-31", "price": 64.75},
+        {"date": "2026-11-01", "price": 64.62},
+        {"date": "2026-11-02", "price": 65.16},
+        {"date": "2026-11-03", "price": 64.0}
+      ],
+      "intraday": [
+        {"date": "2026-11-03 09:30", "price": 65.05},
+        {"date": "2026-11-03 11:30", "price": 64.89},
+        {"date": "2026-11-03 13:30", "price": 64.54},
+        {"date": "2026-11-03 16:00", "price": 64}
+      ]
+    },
+    {
+      "symbol": "TIDE",
+      "name": "Tide Global ETF",
+      "sector": "Diversified ETF",
+      "description": "Tide Global ETF is a fictional investment in the diversified etf sector, provided for trading practice.",
+      "price": 205,
+      "previousClose": 206.99,
+      "history": [
+        {"date": "2026-10-21", "price": 211.86},
+        {"date": "2026-10-22", "price": 213.33},
+        {"date": "2026-10-23", "price": 209.53},
+        {"date": "2026-10-24", "price": 209.74},
+        {"date": "2026-10-25", "price": 210.51},
+        {"date": "2026-10-26", "price": 210.19},
+        {"date": "2026-10-27", "price": 209.46},
+        {"date": "2026-10-28", "price": 208.07},
+        {"date": "2026-10-29", "price": 211.01},
+        {"date": "2026-10-30", "price": 209.05},
+        {"date": "2026-10-31", "price": 208.2},
+        {"date": "2026-11-01", "price": 205.63},
+        {"date": "2026-11-02", "price": 206.99},
+        {"date": "2026-11-03", "price": 205.0}
+      ],
+      "intraday": [
+        {"date": "2026-11-03 09:30", "price": 207.09},
+        {"date": "2026-11-03 11:30", "price": 206.45},
+        {"date": "2026-11-03 13:30", "price": 205.85},
+        {"date": "2026-11-03 16:00", "price": 205}
+      ]
+    },
+    {
+      "symbol": "LUMA",
+      "name": "Luma Foods",
+      "sector": "Consumer goods",
+      "description": "Luma Foods is a fictional investment in the consumer goods sector, provided for trading practice.",
+      "price": 43,
+      "previousClose": 43.7,
+      "history": [
+        {"date": "2026-10-21", "price": 41.18},
+        {"date": "2026-10-22", "price": 41.59},
+        {"date": "2026-10-23", "price": 42.05},
+        {"date": "2026-10-24", "price": 42.69},
+        {"date": "2026-10-25", "price": 42.54},
+        {"date": "2026-10-26", "price": 42.92},
+        {"date": "2026-10-27", "price": 43.65},
+        {"date": "2026-10-28", "price": 43.74},
+        {"date": "2026-10-29", "price": 44.06},
+        {"date": "2026-10-30", "price": 43.67},
+        {"date": "2026-10-31", "price": 43.97},
+        {"date": "2026-11-01", "price": 43.71},
+        {"date": "2026-11-02", "price": 43.7},
+        {"date": "2026-11-03", "price": 43.0}
+      ],
+      "intraday": [
+        {"date": "2026-11-03 09:30", "price": 43.82},
+        {"date": "2026-11-03 11:30", "price": 43.37},
+        {"date": "2026-11-03 13:30", "price": 43.32},
+        {"date": "2026-11-03 16:00", "price": 43}
+      ]
+    },
+    {
+      "symbol": "ORBT",
+      "name": "Orbit Systems",
+      "sector": "Technology",
+      "description": "Orbit Systems is a fictional investment in the technology sector, provided for trading practice.",
+      "price": 172,
+      "previousClose": 169.41,
+      "history": [
+        {"date": "2026-10-21", "price": 164.22},
+        {"date": "2026-10-22", "price": 166.58},
+        {"date": "2026-10-23", "price": 169.76},
+        {"date": "2026-10-24", "price": 169.22},
+        {"date": "2026-10-25", "price": 170.77},
+        {"date": "2026-10-26", "price": 170.53},
+        {"date": "2026-10-27", "price": 169.72},
+        {"date": "2026-10-28", "price": 167.16},
+        {"date": "2026-10-29", "price": 167.11},
+        {"date": "2026-10-30", "price": 169.04},
+        {"date": "2026-10-31", "price": 171.53},
+        {"date": "2026-11-01", "price": 171.99},
+        {"date": "2026-11-02", "price": 169.41},
+        {"date": "2026-11-03", "price": 172.0}
+      ],
+      "intraday": [
+        {"date": "2026-11-03 09:30", "price": 169.43},
+        {"date": "2026-11-03 11:30", "price": 170.2},
+        {"date": "2026-11-03 13:30", "price": 171.12},
+        {"date": "2026-11-03 16:00", "price": 172}
+      ]
+    }
+  ]
+}
