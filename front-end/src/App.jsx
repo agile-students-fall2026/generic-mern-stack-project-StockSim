@@ -2,16 +2,26 @@ import { useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 import AppLayout from './components/layout/AppLayout.jsx'
 import AccountPage from './pages/account/AccountPage.jsx'
+import AchievementsPage from './pages/account/AchievementsPage.jsx'
+import BadgeDetailPage from './pages/account/BadgeDetailPage.jsx'
+import ProfilePage from './pages/account/ProfilePage.jsx'
 import AuthPage from './pages/auth/AuthPage.jsx'
 import LeaderboardPage from './pages/leaderboard/LeaderboardPage.jsx'
+import GlossaryPage from './pages/learn/GlossaryPage.jsx'
+import LearnLayout from './pages/learn/LearnLayout.jsx'
 import LearnPage from './pages/learn/LearnPage.jsx'
+import LessonPage from './pages/learn/LessonPage.jsx'
 import MarketPage from './pages/market/MarketPage.jsx'
 import StockDetailsPage from './pages/market/StockDetailsPage.jsx'
 import WatchlistPage from './pages/market/WatchlistPage.jsx'
 import TradePage from './pages/market/TradePage.jsx'
 import PracticeProvider from './features/market/PracticeProvider.jsx'
 import NotFoundPage from './pages/not-found/NotFoundPage.jsx'
+import HoldingDetailPage from './pages/portfolio/HoldingDetailPage.jsx'
+import PerformancePage from './pages/portfolio/PerformancePage.jsx'
 import PortfolioPage from './pages/portfolio/PortfolioPage.jsx'
+import TransactionDetailPage from './pages/portfolio/TransactionDetailPage.jsx'
+import TransactionsPage from './pages/portfolio/TransactionsPage.jsx'
 import WelcomePage from './pages/welcome/WelcomePage.jsx'
 
 function App() {
@@ -31,14 +41,25 @@ function App() {
       <Route path="/login" element={<AuthPage key="login" />} />
       <Route element={<AppLayout />}>
         <Route path="portfolio" element={<PortfolioPage />} />
+        <Route path="portfolio/performance" element={<PerformancePage />} />
+        <Route path="portfolio/holdings/:symbol" element={<HoldingDetailPage />} />
+        <Route path="portfolio/transactions" element={<TransactionsPage />} />
+        <Route path="portfolio/transactions/:transactionId" element={<TransactionDetailPage />} />
         <Route path="market" element={<MarketPage />} />
-        <Route path="market/:symbol" element={<StockDetailsPage />} />
+         <Route path="market/:symbol" element={<StockDetailsPage />} />
         <Route path="market/watchlist" element={<WatchlistPage />} />
         <Route path="market/:symbol/buy" element={<TradePage side="buy" />} />
         <Route path="market/:symbol/sell" element={<TradePage side="sell" />} />
-        <Route path="learn" element={<LearnPage />} />
+        <Route path="learn" element={<LearnLayout />}>
+          <Route index element={<LearnPage />} />
+          <Route path="glossary" element={<GlossaryPage />} />
+          <Route path=":lessonId" element={<LessonPage />} />
+        </Route>
         <Route path="leaderboard" element={<LeaderboardPage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="account/profile" element={<ProfilePage />} />
+        <Route path="account/achievements" element={<AchievementsPage />} />
+        <Route path="account/achievements/:badgeId" element={<BadgeDetailPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes></PracticeProvider>
