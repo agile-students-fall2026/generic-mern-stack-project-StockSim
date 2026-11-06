@@ -12,6 +12,10 @@ import LearnLayout from './pages/learn/LearnLayout.jsx'
 import LearnPage from './pages/learn/LearnPage.jsx'
 import LessonPage from './pages/learn/LessonPage.jsx'
 import MarketPage from './pages/market/MarketPage.jsx'
+import StockDetailsPage from './pages/market/StockDetailsPage.jsx'
+import WatchlistPage from './pages/market/WatchlistPage.jsx'
+import TradePage from './pages/market/TradePage.jsx'
+import PracticeProvider from './features/market/PracticeProvider.jsx'
 import NotFoundPage from './pages/not-found/NotFoundPage.jsx'
 import HoldingDetailPage from './pages/portfolio/HoldingDetailPage.jsx'
 import PerformancePage from './pages/portfolio/PerformancePage.jsx'
@@ -31,7 +35,7 @@ function App() {
   }, [pathname])
 
   return (
-    <Routes>
+    <PracticeProvider><Routes>
       <Route path="/" element={<WelcomePage />} />
       <Route path="/create-account" element={<AuthPage key="create-account" creatingAccount />} />
       <Route path="/login" element={<AuthPage key="login" />} />
@@ -42,6 +46,10 @@ function App() {
         <Route path="portfolio/transactions" element={<TransactionsPage />} />
         <Route path="portfolio/transactions/:transactionId" element={<TransactionDetailPage />} />
         <Route path="market" element={<MarketPage />} />
+         <Route path="market/:symbol" element={<StockDetailsPage />} />
+        <Route path="market/watchlist" element={<WatchlistPage />} />
+        <Route path="market/:symbol/buy" element={<TradePage side="buy" />} />
+        <Route path="market/:symbol/sell" element={<TradePage side="sell" />} />
         <Route path="learn" element={<LearnLayout />}>
           <Route index element={<LearnPage />} />
           <Route path="glossary" element={<GlossaryPage />} />
@@ -54,7 +62,7 @@ function App() {
         <Route path="account/achievements/:badgeId" element={<BadgeDetailPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    </Routes></PracticeProvider>
   )
 }
 

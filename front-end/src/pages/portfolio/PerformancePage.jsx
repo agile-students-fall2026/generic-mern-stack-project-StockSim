@@ -2,12 +2,17 @@ import { useState } from 'react'
 import BackLink from '../../components/ui/BackLink.jsx'
 import Modal from '../../components/ui/Modal.jsx'
 import { formatMoney, formatSignedMoney, formatSignedPercent } from '../../components/ui/format.js'
-import { holdings, performanceSeries, portfolio } from '../../services/mockData.js'
+import { performanceSeries } from '../../services/mockData.js'
+import usePortfolio from '../../features/market/usePortfolio.js'
+import MarketState from '../../features/market/MarketState.jsx'
+import usePageHeading from '../../features/market/usePageHeading.js'
 
 const periods = ['1W', '1M', '3M', '1Y', 'ALL']
-const holdingsValue = holdings.reduce((sum, h) => sum + h.shares * h.latestPrice, 0)
 
 function PerformancePage() {
+  const state = usePortfolio()
+  const { portfolio, holdingsValue } = state
+  usePageHeading(state.loading || state.error ? null : formatMoney(portfolio.totalValue))
   const [period, setPeriod] = useState('1M')
   const [inspected, setInspected] = useState(null)
   const series = performanceSeries[period]
@@ -16,6 +21,8 @@ function PerformancePage() {
   const max = Math.max(...values)
   // Scale bars between min and max so small changes stay visible.
   const heightOf = (value) => (max === min ? 60 : 15 + ((value - min) / (max - min)) * 85)
+
+  if (state.loading || state.error) return <><BackLink /><MarketState {...state} /></>
 
   return (
     <>
@@ -28,6 +35,7 @@ function PerformancePage() {
         Since starting {formatSignedMoney(portfolio.changeAmount)} ({formatSignedPercent(portfolio.changePercent)})
       </p>
 
+      <p className="mt-6 text-sm text-muted">The chart below is sample history, separate from your current practice account. Your live practice balance is shown above.</p>
       <div className="mt-6 grid grid-cols-5 gap-1 rounded-xl border border-border p-1" role="tablist" aria-label="Performance period">
         {periods.map((p) => (
           <button
@@ -45,7 +53,7 @@ function PerformancePage() {
         ))}
       </div>
 
-      <div className="mt-6 flex h-48 items-end gap-2 rounded-2xl border border-border p-4" aria-label="Portfolio value chart">
+      <div className="mt-6 flex h-48 items-end gap-2 rounded-2xl border border-border p-4" aria-label="Sample portfolio history chart">
         {series.map((point) => (
           <button
             key={point.label}
@@ -70,7 +78,7 @@ function PerformancePage() {
       </dl>
 
       {inspected && (
-        <Modal title="Portfolio value" onClose={() => setInspected(null)}>
+        <Modal title="Sample portfolio value" onClose={() => setInspected(null)}>
           <p>{inspected.label}, 2026 at market close.</p>
           <p className="mt-2 text-2xl font-semibold text-ink">{formatMoney(inspected.value)}</p>
           <button

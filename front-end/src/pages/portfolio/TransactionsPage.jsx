@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import BackLink from '../../components/ui/BackLink.jsx'
 import { formatMoney } from '../../components/ui/format.js'
-import { holdings, transactions } from '../../services/mockData.js'
+import usePortfolio from '../../features/market/usePortfolio.js'
+import MarketState from '../../features/market/MarketState.jsx'
+import { withinTransactionRange } from '../../features/market/portfolio.js'
 
 const tradeTypes = ['All', 'Buy', 'Sell']
 const dateRanges = [
@@ -11,24 +13,13 @@ const dateRanges = [
   { id: 'ALL', label: 'ALL' },
 ]
 
-function nameOf(symbol) {
-  return holdings.find((h) => h.symbol === symbol)?.name ?? symbol
-}
-
-function withinRange(date, range) {
-  if (range === 'ALL') return true
-  const days = range === '1M' ? 30 : 90
-  const cutoff = new Date('2026-11-03')
-  cutoff.setDate(cutoff.getDate() - days)
-  return new Date(date) >= cutoff
-}
-
 function TransactionsPage() {
+  const state = usePortfolio()
   const [tradeType, setTradeType] = useState('All')
   const [range, setRange] = useState('ALL')
 
-  const visible = transactions.filter(
-    (t) => (tradeType === 'All' || t.type === tradeType.toLowerCase()) && withinRange(t.date, range),
+  const visible = state.transactions.filter(
+    (t) => (tradeType === 'All' || t.type === tradeType.toLowerCase()) && withinTransactionRange(t.date, range),
   )
 
   return (
@@ -81,7 +72,8 @@ function TransactionsPage() {
         </button>
       </section>
 
-      {visible.length === 0 ? (
+      <MarketState {...state} />
+      {!state.loading && !state.error && (visible.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-border p-6">
           <p className="font-[650]">No matching transactions</p>
           <p className="mt-1 text-muted">Try a wider date range or a different trade type.</p>
@@ -95,16 +87,16 @@ function TransactionsPage() {
                 className="block rounded-2xl border border-border p-5 text-ink no-underline hover:bg-hover"
               >
                 <p className="font-[650]">
-                  {t.type === 'buy' ? 'Bought' : 'Sold'} {t.symbol} <span className="text-muted">| {nameOf(t.symbol)}</span>
+                  {t.type === 'buy' ? 'Bought' : 'Sold'} {t.symbol} <span className="text-muted">| {t.name}</span>
                 </p>
                 <p className="mt-1 text-sm text-muted">
-                  {t.executedAt} · {t.shares} shares · {formatMoney(t.shares * t.price)}
+                  {t.executedAt} · {t.shares} shares · {formatMoney(t.totalCents / 100)}
                 </p>
               </Link>
             </li>
           ))}
         </ul>
-      )}
+      ))}
     </>
   )
 }
