@@ -95,6 +95,16 @@ The demo starts with $10,000 and no holdings. Watchlist, virtual balance, holdin
 and trade records persist in this browser's `stocksim-practice-v1` localStorage
 entry. This is a single demo account, not authenticated or isolated by user;
 use one tab at a time. If storage is unavailable, a notice explains that changes
-last only for the current page session. Other Portfolio and Account screens
-remain placeholders. Live quote refresh, server execution, pending/unknown order
-states, and contextual learning overlays are not implemented in this demo.
+last only for the current page session. Portfolio summary, holding details,
+transaction history, transaction details, and the current Performance totals use
+this same account and market quotes. Holding Buy/Sell links open the selected
+investment's ticket. Completed trades link to Portfolio and their transaction.
+Average purchase price is reconstructed from the saved trades using weighted
+average cost; incomplete purchase history is shown as unavailable. Missing market
+quotes show an error instead of silently understating the portfolio value.
+
+The Performance chart remains the team's separate sample historical series,
+clearly labeled as such; it is not a history of this account. Account and
+leaderboard sample data are not synchronized with trading. Live quote refresh,
+server execution, pending/unknown order states, and contextual learning overlays
+are not implemented in this demo.

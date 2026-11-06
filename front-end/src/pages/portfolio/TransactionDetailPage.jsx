@@ -1,11 +1,17 @@
 import { useParams } from 'react-router'
 import BackLink from '../../components/ui/BackLink.jsx'
 import { formatMoney } from '../../components/ui/format.js'
-import { transactions } from '../../services/mockData.js'
+import usePortfolio from '../../features/market/usePortfolio.js'
+import MarketState from '../../features/market/MarketState.jsx'
+import usePageHeading from '../../features/market/usePageHeading.js'
 
 function TransactionDetailPage() {
   const { transactionId } = useParams()
-  const transaction = transactions.find((t) => t.id === transactionId)
+  const state = usePortfolio()
+  const transaction = state.transactions.find((t) => t.id === transactionId)
+  usePageHeading(state.loading ? null : transaction ? 'Transaction details' : 'Transaction not found')
+
+  if (state.loading || state.error) return <><BackLink /><MarketState {...state} /></>
 
   if (!transaction) {
     return (
@@ -20,7 +26,7 @@ function TransactionDetailPage() {
     ['Stock', transaction.symbol],
     ['Executed quantity', `${transaction.shares} shares`],
     ['Execution price', formatMoney(transaction.price)],
-    ['Total value', formatMoney(transaction.shares * transaction.price)],
+    ['Total value', formatMoney(transaction.totalCents / 100)],
     ['Executed at', transaction.executedAt],
     ['Transaction ID', transaction.id],
   ]
