@@ -40,6 +40,12 @@ Sprint 1 roles:
 - Hanzalah Siraj - GitHub: [hanza-siraj](https://github.com/hanza-siraj)
 - Abhishek Subedi - GitHub: [zho29](https://github.com/zho29)
 
+Sprint 2 roles:
+
+- Abhishek Subedi - Product Owner, GitHub: [zho29](https://github.com/zho29)
+- Hanzalah Siraj - Scrum Master, GitHub: [hanza-siraj](https://github.com/hanza-siraj)
+- Sam Fiallos - GitHub: [samthropic](https://github.com/samthropic)
+- Brittany (Yutong) Liu - GitHub: [brittany660016](https://github.com/brittany660016)
 
 ## Contributing
 
