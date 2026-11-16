@@ -11,6 +11,16 @@ For Sprint 0:
 - **Scrum Master:** Abhishek Subedi (`Zho29`)
 - **Product Owner:** Hanzalah Siraj (`hanza-siraj`)
 
+For Sprint 1:
+
+- **Scrum Master:** Sam Fiallos (`samthropic`)
+- **Product Owner:** Brittany (Yutong) Liu (`brittany660016`)
+
+For Sprint 2:
+
+- **Scrum Master:** Hanzalah Siraj (`hanza-siraj`)
+- **Product Owner:** Abhishek Subedi (`Zho29`)
+
 These roles rotate each sprint. All members, including the Scrum Master and Product Owner, also do design and development work.
 
 ## Communication and Meetings
