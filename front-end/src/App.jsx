@@ -6,6 +6,7 @@ import AchievementsPage from './pages/account/AchievementsPage.jsx'
 import BadgeDetailPage from './pages/account/BadgeDetailPage.jsx'
 import ProfilePage from './pages/account/ProfilePage.jsx'
 import AuthPage from './pages/auth/AuthPage.jsx'
+import PasswordRecoveryPage from './pages/auth/PasswordRecoveryPage.jsx'
 import LeaderboardPage from './pages/leaderboard/LeaderboardPage.jsx'
 import GlossaryPage from './pages/learn/GlossaryPage.jsx'
 import LearnLayout from './pages/learn/LearnLayout.jsx'
@@ -39,6 +40,7 @@ function App() {
       <Route path="/" element={<WelcomePage />} />
       <Route path="/create-account" element={<AuthPage key="create-account" creatingAccount />} />
       <Route path="/login" element={<AuthPage key="login" />} />
+      <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
       <Route element={<AppLayout />}>
         <Route path="portfolio" element={<PortfolioPage />} />
         <Route path="portfolio/performance" element={<PerformancePage />} />
@@ -58,6 +60,7 @@ function App() {
         <Route path="leaderboard" element={<LeaderboardPage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="account/profile" element={<ProfilePage />} />
+        <Route path="account/reset-password" element={<PasswordRecoveryPage resetting />} />
         <Route path="account/achievements" element={<AchievementsPage />} />
         <Route path="account/achievements/:badgeId" element={<BadgeDetailPage />} />
       </Route>
