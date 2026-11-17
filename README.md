@@ -166,3 +166,39 @@ npm run test:coverage
 Tests use Mocha, Chai, and Supertest. The c8 command reports coverage for all
 backend source files, writes an HTML report to `back-end/coverage/index.html`,
 and enforces the course's minimum 10% coverage requirement.
+
+### Stock search API (#87)
+
+`GET /api/stocks/search?q=Apple` searches company names or ticker symbols using
+Alpha Vantage's `SYMBOL_SEARCH` endpoint. Set `ALPHA_VANTAGE_API_KEY` in the
+backend-only `.env` (see `.env.example`), then restart the backend. Never put
+this key in frontend code, a `VITE_` variable, logs, or version control.
+No key is included; without one, valid searches return `503 SEARCH_NOT_CONFIGURED`.
+
+Success returns `{ query, results, count }`. Each result has `symbol`, `name`,
+`type`, `region`, and `currency`; unavailable optional fields are `null`.
+No matches returns `200` with an empty array. Queries are trimmed first, so
+leading/trailing whitespace (including tabs and newlines) is removed. A missing,
+blank, repeated, over-100-character trimmed query, or a query still containing
+control characters after trimming returns `400 INVALID_QUERY`.
+Upstream quota errors return `503 SEARCH_RATE_LIMITED`, timeouts return
+`504 SEARCH_TIMEOUT`, and invalid/upstream failures return `502 SEARCH_UNAVAILABLE`.
+Errors use the existing `{ error: { code, message } }` envelope, not upstream details.
+
+The free provider allowance is currently 25 requests/day. Trigger searches on
+explicit submission rather than every keystroke. Each server process caches
+up to 100 queries for five minutes and combines identical in-flight requests.
+A quota response pauses new upstream requests for one minute; a daily quota
+may remain exhausted much longer. Caches/cooldowns reset on server restart and
+are not shared across instances. This is not a production quota enforcement system.
+The endpoint is currently public: distinct queries can consume the shared API
+allowance. Add access controls and a shared request budget before public deployment.
+
+Run `npm run lint`, `npm test`, and `npm run test:coverage` inside `back-end/`.
+Search tests inject simulated provider responses and never need a real key or
+external network. Live provider integration still needs validation with a valid
+key. This change adds only the backend search API, not frontend integration,
+quotes, or watchlist persistence.
+
+Provider references: https://www.alphavantage.co/documentation/#symbolsearch
+and https://www.alphavantage.co/support/api-key/ .

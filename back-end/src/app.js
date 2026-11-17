@@ -1,5 +1,6 @@
 import express from 'express'
 import authRouter from './routes/auth.js'
+import { createStocksRouter } from './routes/stocks.js'
 
 const app = express()
 
@@ -11,6 +12,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api/stocks', createStocksRouter())
 
 app.use((_req, res) => {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found.' } })
