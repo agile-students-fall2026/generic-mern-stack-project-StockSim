@@ -115,6 +115,12 @@ main header and bottom navigation. These section screens are placeholders
 until their features are implemented. Authentication is not implemented yet;
 the access forms skip validation and navigate straight to `/portfolio` on
 submission for the frontend demo. They do not save credentials or create a session.
+The login password field links to `/forgot-password`, which provides an email
+form. Account includes a Reset password option at `/account/reset-password`
+with new-password and confirmation fields. These recovery screens are frontend
+prototypes: they check required inputs and matching passwords but show an
+availability message on submission. They do not send email or change passwords.
+
 Unmatched URLs show Page Unavailable with a link back to Portfolio.
 
 When deploying, configure the host to serve `index.html` for frontend routes

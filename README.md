@@ -135,8 +135,8 @@ Check that the server is running:
 curl http://localhost:3001/api/health
 ```
 
-The health route returns `200` with `{"status":"ok"}`. Authentication routes
-are scaffolded for the next implementation steps:
+The health route returns `200` with `{"status":"ok"}`. The API provides these
+authentication routes:
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -146,11 +146,51 @@ are scaffolded for the next implementation steps:
 | POST | `/api/auth/forgot-password` | Request a reset link |
 | POST | `/api/auth/reset-password` | Set a new password |
 
-These five routes currently return `501` with a JSON `NOT_IMPLEMENTED` error.
-They do not create accounts, authenticate users, send email, or store data.
-The frontend login remains its existing demo flow. User validation, password
-hashing, authorization, reset tokens, and frontend integration are later steps;
-database implementation is outside this setup.
+Registration is implemented. The other four routes still return `501` with a
+JSON `NOT_IMPLEMENTED` error. Login sessions, logout, password recovery, and
+frontend integration are later steps. The frontend forms still use the original
+demo navigation; test registration through the API for now.
+
+### Account registration (#77)
+
+`POST /api/auth/register` accepts a JSON object with these required fields:
+
+- `name`: text, 1 to 80 characters after trimming surrounding whitespace.
+- `email`: a valid email address, at most 254 characters. Surrounding whitespace
+  is trimmed and the address is lowercased for duplicate detection. Provider
+  aliases such as Gmail dots or plus-addresses are not rewritten.
+- `password`: text, 8 to 128 characters, not entirely whitespace. Passwords are
+  never trimmed or silently changed.
+
+Example request:
+
+```bash
+curl -i http://localhost:3001/api/auth/register \
+  -H 'Content-Type: application/json' \
+  --data '{"name":"Jordan Avery","email":"jordan@example.com","password":"practice-password"}'
+```
+
+A successful request returns `201` with a `user` object containing `id`, `name`,
+`email`, and `createdAt`. The response does not contain a password/hash or
+establish a login session. Invalid inputs return
+`400` with `error.code` set to `VALIDATION_ERROR` and field messages in
+`error.fields`. An existing email returns `409` with `EMAIL_IN_USE`. Error
+responses do not echo submitted passwords. Extra fields such as `role`, `id`,
+and `passwordHash` are ignored.
+
+Passwords use Node's asynchronous scrypt with a random 16-byte salt and
+N=32768, r=8, p=3. The encoded hash stores those parameters with the salt so it
+can be verified during the next login step. These are among the
+[OWASP scrypt settings](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
+
+Users live only in an in-memory store and disappear when the server restarts,
+including automatic restarts during development. There is no database work in
+this step. The store exposes asynchronous `findByEmail(email)` and
+`create({ name, email, passwordHash })` methods so the database teammate can
+replace it later. Emails passed to this interface must already be normalized;
+`create` must reject duplicates atomically with `DuplicateEmailError`. The current
+adapter prevents simultaneous duplicate requests from overwriting an account
+within the running server process.
 
 Requests use JSON with a 10 KB body limit. Malformed JSON, oversized bodies,
 and unknown routes return JSON errors with statuses `400`, `413`, and `404`.

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router'
+import AuthLayout from '../../components/layout/AuthLayout.jsx'
 
 function AuthPage({ creatingAccount = false }) {
   const navigate = useNavigate()
@@ -11,10 +12,7 @@ function AuthPage({ creatingAccount = false }) {
   }
 
   return (
-    <main id="main-content" className="mx-auto w-full max-w-[52rem] px-6 py-[clamp(2rem,8vw,6rem)]">
-      <Link to="/" className="mb-12 inline-block border-b-4 border-accent pb-2 text-2xl leading-[normal] font-[750] tracking-[-0.04em] no-underline">
-        StockSim
-      </Link>
+    <AuthLayout>
       <h1 tabIndex={-1} className="text-[clamp(2.5rem,7vw,4rem)] leading-[1.1] font-semibold tracking-[-0.05em]">
         {title}
       </h1>
@@ -34,8 +32,15 @@ function AuthPage({ creatingAccount = false }) {
           Email
           <input className={inputClassName} id="email" name="email" type="email" autoComplete="email" />
         </label>
-        <label className="font-[550]" htmlFor="password">
-          Password
+        <div>
+          <div className="flex items-center justify-between gap-4">
+            <label className="font-[550]" htmlFor="password">Password</label>
+            {!creatingAccount && (
+              <Link to="/forgot-password" className="inline-flex min-h-11 items-center text-sm font-[650] text-ink underline underline-offset-[0.3em]">
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <input
             className={inputClassName}
             id="password"
@@ -43,7 +48,7 @@ function AuthPage({ creatingAccount = false }) {
             type="password"
             autoComplete={creatingAccount ? 'new-password' : 'current-password'}
           />
-        </label>
+        </div>
         <button className="min-h-12 cursor-pointer rounded-[2rem] bg-accent px-6 py-3.5 font-[650] text-ink hover:bg-accent-hover" type="submit">
           {title}
         </button>
@@ -54,7 +59,7 @@ function AuthPage({ creatingAccount = false }) {
           {creatingAccount ? 'Log in' : 'Create account'}
         </Link>
       </p>
-    </main>
+    </AuthLayout>
   )
 }
 
