@@ -24,6 +24,9 @@ function AccountPage() {
         <Link to="/account/profile" className={menuButtonClass}>
           Profile
         </Link>
+        <Link to="/account/reset-password" className={menuButtonClass}>
+          Reset password
+        </Link>
         <Link to="/learn" className={menuButtonClass}>
           Learning progress
         </Link>
