@@ -34,6 +34,16 @@ describe('Temporary user store', () => {
     expect(await store.findByEmail(user.email)).to.deep.equal(created)
   })
 
+  it('looks up users by ID without returning a mutable stored record', async () => {
+    const store = createMemoryUserStore()
+    const created = await store.create(user)
+    const found = await store.findById(created.id)
+    expect(found).to.deep.equal(created)
+    found.name = 'Changed'
+    expect((await store.findById(created.id)).name).to.equal(user.name)
+    expect(await store.findById('missing')).to.equal(null)
+  })
+
   it('starts empty for a new app/server store', async () => {
     await createMemoryUserStore().create(user)
     expect(await createMemoryUserStore().findByEmail(user.email)).to.equal(null)

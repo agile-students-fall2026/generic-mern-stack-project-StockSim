@@ -145,13 +145,15 @@ authentication routes:
 | POST | `/api/auth/register` | Create an account |
 | POST | `/api/auth/login` | Log in |
 | POST | `/api/auth/logout` | Log out |
+| GET | `/api/auth/me` | Read the current user; requires login |
 | POST | `/api/auth/forgot-password` | Request a reset link |
 | POST | `/api/auth/reset-password` | Set a new password |
 
-Registration is implemented. The other four routes still return `501` with a
-JSON `NOT_IMPLEMENTED` error. Login sessions, logout, password recovery, and
-frontend integration are later steps. The frontend forms still use the original
-demo navigation; test registration through the API for now.
+Registration, login, logout, and the protected `GET /api/auth/me` endpoint are
+implemented. Forgot/reset password still return `501` with a JSON
+`NOT_IMPLEMENTED` error. The frontend forms still use the original demo
+navigation; frontend integration remains a later step. Test the backend with
+API requests or the Mocha/Chai suite for now.
 
 ### Account registration (#77)
 
@@ -182,17 +184,81 @@ and `passwordHash` are ignored.
 
 Passwords use Node's asynchronous scrypt with a random 16-byte salt and
 N=32768, r=8, p=3. The encoded hash stores those parameters with the salt so it
-can be verified during the next login step. These are among the
+can be verified at login. These are among the
 [OWASP scrypt settings](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
 Users live only in an in-memory store and disappear when the server restarts,
 including automatic restarts during development. There is no database work in
-this step. The store exposes asynchronous `findByEmail(email)` and
+this step. The store exposes asynchronous `findByEmail(email)`, `findById(id)`, and
 `create({ name, email, passwordHash })` methods so the database teammate can
 replace it later. Emails passed to this interface must already be normalized;
 `create` must reject duplicates atomically with `DuplicateEmailError`. The current
 adapter prevents simultaneous duplicate requests from overwriting an account
 within the running server process.
+
+
+### Login, logout, and protected access (#78)
+
+`POST /api/auth/login` accepts JSON with `email` and `password`. Email is trimmed
+and lowercased as at registration; passwords are preserved exactly. Malformed
+fields return `400`. An incorrect password and an unknown email both return
+`401` with the same `INVALID_CREDENTIALS` error. Login verifies the stored scrypt
+hash and returns only public user details, not passwords, hashes, or a JWT in JSON.
+
+Successful login sets a `stocksim_session` HttpOnly, SameSite=Strict cookie for
+`/api`. The signed JWT expires after 15 minutes and checks its HS256 signature,
+issuer, audience, expiry, and a matching active session in memory. The protected
+`GET /api/auth/me` endpoint returns `200` with the current public user, or `401`
+when authentication is missing, expired, invalid, or revoked. The reusable
+`requireAuth` middleware can protect additional backend routes when those are
+integrated. Query-string and Bearer tokens are not accepted; this API uses cookies.
+
+`POST /api/auth/logout` revokes that session and clears its cookie, returning
+`204` even if already logged out. Copying the old JWT does not bypass logout.
+Another login from the same browser replaces its existing session; separately
+logged-in devices keep their own sessions. Users and active sessions both reset
+when this temporary server restarts. Authentication responses use `Cache-Control:
+no-store`.
+
+Login allows at most 10 failed requests per client IP per 15 minutes; further
+requests return `429` with a retry header. Successful logins do not consume that
+failed-attempt allowance. Browser authentication submissions reject untrusted
+origins and cross-site Fetch Metadata headers. The API's own origin, the configured
+`FRONTEND_ORIGIN` (default `http://localhost:5173`), and `http://127.0.0.1:5173`
+are allowed. API tools without browser origin headers are supported. CORS and
+frontend requests will be configured during frontend integration.
+
+In development, an omitted/empty `JWT_SECRET` generates a random in-memory key.
+For production (`NODE_ENV=production`), set a secret of at least 32 bytes in the
+ignored `back-end/.env` file or environment. Production cookies are also Secure
+and require HTTPS. Generate a random secret locally with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Do not commit the generated value. `.env.example` contains only configuration
+names and safe defaults. Keep using the same hostname for the commands below
+so the cookie jar works (the example uses `localhost` throughout).
+
+After registering the example user above, test the full login flow:
+
+```bash
+# Save the cookie without printing the JWT in the terminal.
+# Run these commands in the same terminal session.
+auth_cookie_jar=$(mktemp)
+curl -sS -c "$auth_cookie_jar" http://localhost:3001/api/auth/login \
+  -H 'Content-Type: application/json' \
+  --data '{"email":"jordan@example.com","password":"practice-password"}'
+
+# Expect 200 and the current user.
+curl -i -b "$auth_cookie_jar" http://localhost:3001/api/auth/me
+
+# Expect 204, followed by 401 even when the old cookie is sent again.
+curl -i -b "$auth_cookie_jar" -X POST http://localhost:3001/api/auth/logout
+curl -i -b "$auth_cookie_jar" http://localhost:3001/api/auth/me
+rm "$auth_cookie_jar"
+```
 
 Requests use JSON with a 10 KB body limit. Malformed JSON, oversized bodies,
 and unknown routes return JSON errors with statuses `400`, `413`, and `404`.
