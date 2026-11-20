@@ -12,7 +12,7 @@ describe('Express API setup', () => {
     expect(response.body).to.deep.equal({ status: 'ok' })
   })
 
-  for (const path of ['login', 'logout', 'forgot-password', 'reset-password']) {
+  for (const path of ['forgot-password', 'reset-password']) {
     it(`exposes POST /api/auth/${path} without claiming auth is implemented`, async () => {
       const response = await request(app)
         .post(`/api/auth/${path}`)

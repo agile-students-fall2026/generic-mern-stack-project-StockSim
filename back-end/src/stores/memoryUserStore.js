@@ -18,6 +18,13 @@ export function createMemoryUserStore() {
       return user ? { ...user } : null
     },
 
+    async findById(id) {
+      for (const user of usersByEmail.values()) {
+        if (user.id === id) return { ...user }
+      }
+      return null
+    },
+
     async create({ name, email, passwordHash }) {
       // Check and insert without an await so concurrent requests cannot overwrite a user.
       if (usersByEmail.has(email)) throw new DuplicateEmailError()

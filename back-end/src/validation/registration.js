@@ -1,4 +1,5 @@
-import { body, validationResult } from 'express-validator'
+import { body } from 'express-validator'
+import { handleValidationErrors } from './result.js'
 
 export const validateRegistration = [
   body('name')
@@ -15,14 +16,5 @@ export const validateRegistration = [
     .isString().withMessage('Password must be text.').bail()
     .isLength({ min: 8, max: 128 }).withMessage('Password must contain 8 to 128 characters.').bail()
     .custom((value) => value.trim().length > 0).withMessage('Password cannot contain only spaces.'),
-  (req, res, next) => {
-    const errors = validationResult(req)
-    if (errors.isEmpty()) return next()
-
-    // Return field names/messages only, never the submitted password or other values.
-    const fields = Object.fromEntries(errors.array({ onlyFirstError: true }).map(({ path, msg }) => [path, msg]))
-    res.status(400).json({
-      error: { code: 'VALIDATION_ERROR', message: 'Check the highlighted fields.', fields },
-    })
-  },
+  handleValidationErrors,
 ]

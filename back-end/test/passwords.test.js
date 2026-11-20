@@ -2,7 +2,7 @@ import { scrypt } from 'node:crypto'
 import { promisify } from 'node:util'
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import { hashPassword } from '../src/services/passwords.js'
+import { hashPassword, verifyPassword } from '../src/services/passwords.js'
 
 const deriveKey = promisify(scrypt)
 
@@ -26,5 +26,21 @@ describe('Password hashing', () => {
 
     expect(hash).to.equal(expected.toString('hex'))
     expect(hash).not.to.equal(trimmed.toString('hex'))
+  })
+})
+
+describe('Password verification', () => {
+  it('accepts only the original password and preserves surrounding spaces', async () => {
+    const hash = await hashPassword('  practice-password  ')
+    expect(await verifyPassword('  practice-password  ', hash)).to.equal(true)
+    expect(await verifyPassword('practice-password', hash)).to.equal(false)
+    expect(await verifyPassword('wrong-password', hash)).to.equal(false)
+  })
+
+  it('rejects missing, corrupt, and unsupported hashes without trusting their work factors', async () => {
+    for (const hash of [undefined, '', 'not-a-hash', 'scrypt$999999999999$8$3$salt$hash']) {
+      expect(await verifyPassword('password', hash)).to.equal(false)
+    }
+    expect(await verifyPassword(undefined, 'hash')).to.equal(false)
   })
 })
