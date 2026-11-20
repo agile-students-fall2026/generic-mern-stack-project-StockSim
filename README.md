@@ -76,7 +76,9 @@ npm run build
 
 ### Market demo (#69–#71)
 
-- `/market`: browse fictional investments; search by ticker or company name.
+- `/market`: browse fictional practice investments. Submit a company name or ticker
+  with Enter or Search to call the backend company-search API. Search results are
+  informational only, with no prices or trading links.
 - `/market/NOVA`: inspect a stock and switch between Day, Week, and All
   chart periods. Tap the chart or use the labeled slider to
   inspect a historical price. Unknown tickers show an unavailable state.
@@ -87,9 +89,9 @@ npm run build
   and selling more shares than owned are rejected. Confirmation updates virtual
   cash and holdings and produces a receipt.
 
-Market data comes from `front-end/public/mock/market.json`, a seeded, generated
+The practice investment data comes from `front-end/public/mock/market.json`, a seeded, generated
 fixture served as a mock endpoint. Companies, prices, and history are fictional;
-there are no live quotes, API keys, or real trades. Future backend integration
+there are no live quotes or real trades in the practice account. Future backend integration
 should replace this endpoint and the practice account adapter.
 
 The compact fixture keeps the same six investments and current quotes, with
@@ -237,8 +239,14 @@ allowance. Add access controls and a shared request budget before public deploym
 Run `npm run lint`, `npm test`, and `npm run test:coverage` inside `back-end/`.
 Search tests inject simulated provider responses and never need a real key or
 external network. Live provider integration still needs validation with a valid
-key. This change adds only the backend search API, not frontend integration,
-quotes, or watchlist persistence.
+key. The Market page uses this endpoint only on explicit submission, with loading,
+empty, and error states. The fictional practice list and trading remain separate;
+company-search results do not link to fictional stock details. Run both backend
+and frontend for local search: Vite forwards `/api` to `http://127.0.0.1:3001`.
+If the backend uses a different port, update that proxy target. This development
+proxy does not apply to a production build; the production host must route `/api`
+to the backend on the same origin. No live quotes or server watchlist persistence
+are added.
 
 Provider references: https://www.alphavantage.co/documentation/#symbolsearch
 and https://www.alphavantage.co/support/api-key/ .
