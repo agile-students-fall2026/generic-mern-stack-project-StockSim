@@ -1,7 +1,8 @@
 import { Router } from 'express'
+import { createStockQuote, normalizeStockSymbol, StockQuoteError } from '../services/stockQuote.js'
 import { createStockSearch, StockSearchError } from '../services/stockSearch.js'
 
-export function createStocksRouter({ search = createStockSearch() } = {}) {
+export function createStocksRouter({ search = createStockSearch(), quote = createStockQuote() } = {}) {
   const router = Router()
   router.get('/search', async (req, res, next) => {
     const query = typeof req.query.q === 'string' ? req.query.q.trim() : ''
@@ -13,6 +14,18 @@ export function createStocksRouter({ search = createStockSearch() } = {}) {
       res.json({ query, results, count: results.length })
     } catch (error) {
       if (error instanceof StockSearchError) {
+        return res.status(error.status).json({ error: { code: error.code, message: error.message } })
+      }
+      next(error)
+    }
+  })
+  router.get('/:symbol/quote', async (req, res, next) => {
+    const symbol = normalizeStockSymbol(req.params.symbol)
+    if (!symbol) return res.status(400).json({ error: { code: 'INVALID_SYMBOL', message: 'Provide a valid stock symbol.' } })
+    try {
+      res.json(await quote(symbol))
+    } catch (error) {
+      if (error instanceof StockQuoteError) {
         return res.status(error.status).json({ error: { code: error.code, message: error.message } })
       }
       next(error)
