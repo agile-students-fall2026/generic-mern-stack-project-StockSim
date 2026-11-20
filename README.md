@@ -250,3 +250,49 @@ are added.
 
 Provider references: https://www.alphavantage.co/documentation/#symbolsearch
 and https://www.alphavantage.co/support/api-key/ .
+
+### Stock quotes (#88)
+
+`GET /api/stocks/AAPL/quote` looks up a normalized ticker via Alpha Vantage
+`GLOBAL_QUOTE`, using the same server-only `ALPHA_VANTAGE_API_KEY` as search.
+It returns `symbol`, `price`, `change`, `changePercent`, `tradingDate`,
+`quoteTimestamp`, `fetchedAt`, and `dataTiming`. `changePercent` is in percentage
+points (e.g. 1.2 means 1.2%). Alpha Vantage's default quote is updated at
+end of day and gives a trading date, not an exact timestamp. Exact quote time
+is therefore `null`; `fetchedAt` is when our server fetched the data, not a
+market timestamp. Do not present this data as live. See the
+[provider documentation](https://www.alphavantage.co/documentation/#latestprice).
+
+Malformed symbols return 400; provider-confirmed missing quotes return 404.
+Missing configuration, quota responses, or too many concurrent upstream requests return 503;
+upstream timeout returns 504 and other provider failures return 502. Errors
+do not forward provider responses or keys. Success is cached for 15 minutes
+and missing quotes for one minute. Each process coalesces identical requests,
+limits quote requests in flight to three, and pauses new requests for one
+minute after a quota response. Search and quotes share the provider's account
+quota; this is not a shared daily budget or public access control.
+
+### Watchlist backend groundwork (#89)
+
+The watchlist router is intentionally **not mounted**. It can list, add
+and remove symbols for one verified user, prevent duplicates through the
+store contract, and return saved items even when individual quotes fail.
+It does not change the frontend practice watchlist.
+
+Before mounting at `/api/watchlist`:
+
+- Connect to #78's verified sessions. `getAuthenticatedUserId(req)` must
+  resolve a stable account ID from the server-verified session, never from
+  request-supplied IDs. For cookie sessions, require CSRF protection for
+  mutations. Unauthenticated requests return 401.
+- Supply a durable team database adapter: `list(userId)` returns that user's
+  bounded, unique symbol list; `add(userId, symbol, limit)` atomically checks
+  existence and capacity, returning `added`, `exists`, or `full`. Enforce atomic
+  uniqueness on (userId, symbol), and idempotently implement
+  `remove(userId, symbol)` scoped to that same user.
+- Pass the same server quote service to both routes to share cache and
+  in-flight protections. Watchlist entries with unavailable quotes preserve
+  their symbols and have null price/change rather than invented values.
+
+The tests use simulated quote responses and a test-only store. A real provider
+key, a production session/store adapter, and deployment are not verified here.
