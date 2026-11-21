@@ -19,7 +19,7 @@ describe('JWT sessions', () => {
 
     expect(claims.sub).to.equal('user-1')
     expect(claims.exp - claims.iat).to.equal(SESSION_SECONDS)
-    expect(sessions.read(token)).to.deep.equal({ userId: 'user-1', sessionId: claims.jti })
+    expect(sessions.read(token)).to.deep.equal({ userId: 'user-1', sessionId: claims.jti, authVersion: 0 })
     expect(sessions.issue('user-1')).not.to.equal(token)
   })
 
@@ -49,7 +49,7 @@ describe('JWT sessions', () => {
   it('rejects other signatures, algorithms, issuers, audiences, and unknown session IDs', () => {
     const token = sessions.issue('user-1')
     const claims = jwt.decode(token)
-    const payload = { sub: claims.sub, jti: claims.jti, iat: claims.iat }
+    const payload = { sub: claims.sub, jti: claims.jti, iat: claims.iat, ver: claims.ver }
     const options = { expiresIn: SESSION_SECONDS, algorithm: 'HS256', issuer: 'stocksim-api', audience: 'stocksim-web' }
     const tokens = [
       jwt.sign(payload, 'another-key-with-at-least-32-bytes', options),
@@ -69,6 +69,16 @@ describe('JWT sessions', () => {
     const first = createSessionService({ secret: '', production: false })
     const second = createSessionService({ secret: '', production: false })
     expect(second.read(first.issue('user-1'))).to.equal(null)
+  })
+
+  it('revokes every session for one account while retaining other accounts', () => {
+    const first = sessions.issue('user-1', 0)
+    const second = sessions.issue('user-1', 0)
+    const other = sessions.issue('user-2', 3)
+    sessions.revokeAll('user-1')
+    expect(sessions.read(first)).to.equal(null)
+    expect(sessions.read(second)).to.equal(null)
+    expect(sessions.read(other).authVersion).to.equal(3)
   })
 
   it('requires a strong configured secret in production and marks cookies Secure', () => {

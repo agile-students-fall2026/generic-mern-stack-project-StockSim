@@ -13,16 +13,11 @@ describe('Express API setup', () => {
   })
 
   for (const path of ['forgot-password', 'reset-password']) {
-    it(`exposes POST /api/auth/${path} without claiming auth is implemented`, async () => {
-      const response = await request(app)
-        .post(`/api/auth/${path}`)
-        .send({ email: 'learner@example.com', password: 'example-password' })
-
-      expect(response.status).to.equal(501)
-      expect(response.body.error.code).to.equal('NOT_IMPLEMENTED')
-      expect(response.body.error.message).to.be.a('string').and.not.be.empty
+    it(`exposes POST /api/auth/${path} with input validation`, async () => {
+      const response = await request(app).post(`/api/auth/${path}`).send({})
+      expect(response.status).to.equal(400)
+      expect(response.body.error.code).to.equal('VALIDATION_ERROR')
       expect(response.headers['set-cookie']).to.equal(undefined)
-      expect(JSON.stringify(response.body)).not.to.include('example-password')
     })
   }
 
