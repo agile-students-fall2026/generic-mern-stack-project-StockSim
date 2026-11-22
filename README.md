@@ -76,7 +76,9 @@ npm run build
 
 ### Market demo (#69–#71)
 
-- `/market`: browse fictional investments; search by ticker or company name.
+- `/market`: browse fictional practice investments. Submit a company name or ticker
+  with Enter or Search to call the backend company-search API. Search results are
+  informational only, with no prices or trading links.
 - `/market/NOVA`: inspect a stock and switch between Day, Week, and All
   chart periods. Tap the chart or use the labeled slider to
   inspect a historical price. Unknown tickers show an unavailable state.
@@ -87,9 +89,9 @@ npm run build
   and selling more shares than owned are rejected. Confirmation updates virtual
   cash and holdings and produces a receipt.
 
-Market data comes from `front-end/public/mock/market.json`, a seeded, generated
+The practice investment data comes from `front-end/public/mock/market.json`, a seeded, generated
 fixture served as a mock endpoint. Companies, prices, and history are fictional;
-there are no live quotes, API keys, or real trades. Future backend integration
+there are no live quotes or real trades in the practice account. Future backend integration
 should replace this endpoint and the practice account adapter.
 
 The compact fixture keeps the same six investments and current quotes, with
@@ -143,13 +145,14 @@ authentication routes:
 | POST | `/api/auth/register` | Create an account |
 | POST | `/api/auth/login` | Log in |
 | POST | `/api/auth/logout` | Log out |
+| GET | `/api/auth/me` | Read the current user; requires login |
 | POST | `/api/auth/forgot-password` | Request a reset link |
 | POST | `/api/auth/reset-password` | Set a new password |
 
-Registration is implemented. The other four routes still return `501` with a
-JSON `NOT_IMPLEMENTED` error. Login sessions, logout, password recovery, and
-frontend integration are later steps. The frontend forms still use the original
-demo navigation; test registration through the API for now.
+Registration, login, logout, forgot/reset password, and the protected
+`GET /api/auth/me` endpoint are implemented. The frontend forms still use the
+original demo navigation; frontend integration remains step 5. Test the backend
+with API requests or the Mocha/Chai suite for now.
 
 ### Account registration (#77)
 
@@ -180,17 +183,182 @@ and `passwordHash` are ignored.
 
 Passwords use Node's asynchronous scrypt with a random 16-byte salt and
 N=32768, r=8, p=3. The encoded hash stores those parameters with the salt so it
-can be verified during the next login step. These are among the
+can be verified at login. These are among the
 [OWASP scrypt settings](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
 Users live only in an in-memory store and disappear when the server restarts,
 including automatic restarts during development. There is no database work in
-this step. The store exposes asynchronous `findByEmail(email)` and
+this step. The store exposes asynchronous `findByEmail(email)`, `findById(id)`, and
 `create({ name, email, passwordHash })` methods so the database teammate can
-replace it later. Emails passed to this interface must already be normalized;
+replace it later. Password recovery also uses
+`updatePassword(id, passwordHash, expectedAuthVersion)`: atomically match the
+account's current `authVersion`, update the hash, and increment that version.
+Return the updated user or `null` when the account/version does not match.
+New users start with version `0`; this internal field is not returned by the API.
+Emails passed to this interface must already be normalized;
 `create` must reject duplicates atomically with `DuplicateEmailError`. The current
 adapter prevents simultaneous duplicate requests from overwriting an account
 within the running server process.
+
+
+### Login, logout, and protected access (#78)
+
+`POST /api/auth/login` accepts JSON with `email` and `password`. Email is trimmed
+and lowercased as at registration; passwords are preserved exactly. Malformed
+fields return `400`. An incorrect password and an unknown email both return
+`401` with the same `INVALID_CREDENTIALS` error. Login verifies the stored scrypt
+hash and returns only public user details, not passwords, hashes, or a JWT in JSON.
+
+Successful login sets a `stocksim_session` HttpOnly, SameSite=Strict cookie for
+`/api`. The signed JWT expires after 15 minutes and checks its HS256 signature,
+issuer, audience, expiry, and a matching active session in memory. Protected
+access also checks the account password version so an in-flight login cannot
+restore access using a password that has just been reset. The protected
+`GET /api/auth/me` endpoint returns `200` with the current public user, or `401`
+when authentication is missing, expired, invalid, or revoked. The reusable
+`requireAuth` middleware can protect additional backend routes when those are
+integrated. Query-string and Bearer tokens are not accepted; this API uses cookies.
+
+`POST /api/auth/logout` revokes that session and clears its cookie, returning
+`204` even if already logged out. Copying the old JWT does not bypass logout.
+Another login from the same browser replaces its existing session; separately
+logged-in devices keep their own sessions. Users and active sessions both reset
+when this temporary server restarts. Authentication responses use `Cache-Control:
+no-store`.
+
+Login allows at most 10 failed requests per client IP per 15 minutes; further
+requests return `429` with a retry header. Successful logins do not consume that
+failed-attempt allowance. Browser authentication submissions reject untrusted
+origins and cross-site Fetch Metadata headers. The API's own origin, the configured
+`FRONTEND_ORIGIN` (default `http://localhost:5173`), and `http://127.0.0.1:5173`
+are allowed. API tools without browser origin headers are supported. CORS and
+frontend requests will be configured during frontend integration.
+
+In development, an omitted/empty `JWT_SECRET` generates a random in-memory key.
+For production (`NODE_ENV=production`), set a secret of at least 32 bytes in the
+ignored `back-end/.env` file or environment. Production cookies are also Secure
+and require HTTPS. Generate a random secret locally with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Do not commit the generated value. `.env.example` contains only configuration
+names and safe defaults. Keep using the same hostname for the commands below
+so the cookie jar works (the example uses `localhost` throughout).
+
+After registering the example user above, test the full login flow:
+
+```bash
+# Save the cookie without printing the JWT in the terminal.
+# Run these commands in the same terminal session.
+auth_cookie_jar=$(mktemp)
+curl -sS -c "$auth_cookie_jar" http://localhost:3001/api/auth/login \
+  -H 'Content-Type: application/json' \
+  --data '{"email":"jordan@example.com","password":"practice-password"}'
+
+# Expect 200 and the current user.
+curl -i -b "$auth_cookie_jar" http://localhost:3001/api/auth/me
+
+# Expect 204, followed by 401 even when the old cookie is sent again.
+curl -i -b "$auth_cookie_jar" -X POST http://localhost:3001/api/auth/logout
+curl -i -b "$auth_cookie_jar" http://localhost:3001/api/auth/me
+rm "$auth_cookie_jar"
+```
+
+
+### Forgot and reset password (#79)
+
+`POST /api/auth/forgot-password` accepts `{ "email": "jordan@example.com" }`.
+The email is validated and normalized as at registration. A valid request
+returns `202` with the same message for known and unknown accounts:
+
+```json
+{"message":"If an account exists for that email, you will receive a password reset link."}
+```
+
+Account lookup and delivery run in a bounded asynchronous queue, outside the
+response. No token, reset URL, recipient address, or account-existence flag is
+returned. Each client IP can make five forgot-password requests per 15 minutes;
+additional requests return `429`. Delivery failures retain the same generic
+response, invalidate the undelivered token, and log only a generic delivery
+failure message. Pending delivery work is capped at 100 jobs.
+
+Reset links contain a cryptographically random 32-byte token, valid for
+15 minutes and usable once. Only its SHA-256 digest is retained in the temporary
+token store. A new request replaces any earlier active link for that account.
+Links are built from the configured `FRONTEND_ORIGIN`, never the request Host
+header, and use `/reset-password#token=...`. The fragment keeps the token out of
+the HTTP request URL and referrers. In production this configured origin must
+use HTTPS. The public reset page and reading/submitting this fragment are part
+of frontend integration in step 5; the current frontend recovery forms remain
+prototypes. Use the API to test resets before that integration.
+
+`POST /api/auth/reset-password` accepts JSON with `token`, `password`, and
+`confirmPassword`. The new password follows the registration policy (8 to 128
+characters, not entirely whitespace, and never trimmed). Confirmation must
+match exactly. Missing/malformed fields return `400 VALIDATION_ERROR` with field
+messages. Invalid, expired, superseded, or reused tokens return the same
+`400 INVALID_RESET_TOKEN` error. There is no public token-inspection endpoint.
+
+A successful reset returns `200` with a confirmation message, saves a new
+salted password hash, consumes all outstanding reset links for the account,
+revokes its existing login sessions, and clears the current browser's auth
+cookie. Other accounts' sessions remain valid. The user must log in again;
+resetting does not automatically create a session. A token can be claimed by
+only one concurrent reset. An account-version check prevents overwriting a
+password changed concurrently. Validation or storage failures do not consume a
+still-valid link; a superseded link is never resurrected.
+
+#### Development email outbox
+
+No email account is needed for local testing. When `SMTP_HOST` is empty, emails
+are generated with Nodemailer's JSON transport into `back-end/.mail/*.json`.
+Open the newest file in an editor and read its `text` field for the reset link.
+These are local previews; they are not delivered to a real inbox. The directory
+is private (0700), files are private (0600), the directory is Git-ignored, and
+there is no HTTP route serving it. Do not copy real reset links into issues or
+commit preview files.
+
+Keep the backend running and first register the sample account using the
+registration request above. Then request a link:
+
+```bash
+curl -i http://localhost:3001/api/auth/forgot-password \
+  -H 'Content-Type: application/json' \
+  --data '{"email":"jordan@example.com"}'
+```
+
+After the preview appears in `back-end/.mail`, copy the 64-character value after
+`#token=` into `reset_token` in another terminal, then submit it:
+
+```bash
+reset_token='COPY_TOKEN_HERE'
+curl -i http://localhost:3001/api/auth/reset-password \
+  -H 'Content-Type: application/json' \
+  --data "{\"token\":\"$reset_token\",\"password\":\"new-practice-password\",\"confirmPassword\":\"new-practice-password\"}"
+```
+
+Expect `200`. Submitting that same token again returns `400`; logging in with
+the old password returns `401`, while `new-practice-password` works. Users,
+active sessions, reset tokens, and queued delivery work are in memory and reset
+on server restart. Email preview files may remain on disk but old links stop
+working. Automatic development restarts also clear this temporary state.
+
+#### Optional SMTP delivery
+
+For delivery through a development SMTP server or email provider, configure
+`SMTP_HOST`, `SMTP_PORT` (default 587; 465 uses implicit TLS), `SMTP_USER`,
+`SMTP_PASS`, and `MAIL_FROM` in the ignored backend `.env`. Credentials must be
+provided together when authentication is used. Production requires SMTP
+configuration and TLS, and never falls back to local preview files. Connection,
+greeting, and socket timeouts are bounded. Transport debugging is disabled to
+avoid logging credentials or reset messages. Tests use local previews or injected
+transports and do not send real email; live SMTP still needs verification with
+your provider credentials.
+
+The reset implementation follows the
+[OWASP forgot-password guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
 
 Requests use JSON with a 10 KB body limit. Malformed JSON, oversized bodies,
 and unknown routes return JSON errors with statuses `400`, `413`, and `404`.
@@ -237,8 +405,60 @@ allowance. Add access controls and a shared request budget before public deploym
 Run `npm run lint`, `npm test`, and `npm run test:coverage` inside `back-end/`.
 Search tests inject simulated provider responses and never need a real key or
 external network. Live provider integration still needs validation with a valid
-key. This change adds only the backend search API, not frontend integration,
-quotes, or watchlist persistence.
+key. The Market page uses this endpoint only on explicit submission, with loading,
+empty, and error states. The fictional practice list and trading remain separate;
+company-search results do not link to fictional stock details. Run both backend
+and frontend for local search: Vite forwards `/api` to `http://127.0.0.1:3001`.
+If the backend uses a different port, update that proxy target. This development
+proxy does not apply to a production build; the production host must route `/api`
+to the backend on the same origin. No live quotes or server watchlist persistence
+are added.
 
 Provider references: https://www.alphavantage.co/documentation/#symbolsearch
 and https://www.alphavantage.co/support/api-key/ .
+
+### Stock quotes (#88)
+
+`GET /api/stocks/AAPL/quote` looks up a normalized ticker via Alpha Vantage
+`GLOBAL_QUOTE`, using the same server-only `ALPHA_VANTAGE_API_KEY` as search.
+It returns `symbol`, `price`, `change`, `changePercent`, `tradingDate`,
+`quoteTimestamp`, `fetchedAt`, and `dataTiming`. `changePercent` is in percentage
+points (e.g. 1.2 means 1.2%). Alpha Vantage's default quote is updated at
+end of day and gives a trading date, not an exact timestamp. Exact quote time
+is therefore `null`; `fetchedAt` is when our server fetched the data, not a
+market timestamp. Do not present this data as live. See the
+[provider documentation](https://www.alphavantage.co/documentation/#latestprice).
+
+Malformed symbols return 400; provider-confirmed missing quotes return 404.
+Missing configuration, quota responses, or too many concurrent upstream requests return 503;
+upstream timeout returns 504 and other provider failures return 502. Errors
+do not forward provider responses or keys. Success is cached for 15 minutes
+and missing quotes for one minute. Each process coalesces identical requests,
+limits quote requests in flight to three, and pauses new requests for one
+minute after a quota response. Search and quotes share the provider's account
+quota; this is not a shared daily budget or public access control.
+
+### Watchlist backend groundwork (#89)
+
+The watchlist router is intentionally **not mounted**. It can list, add
+and remove symbols for one verified user, prevent duplicates through the
+store contract, and return saved items even when individual quotes fail.
+It does not change the frontend practice watchlist.
+
+Before mounting at `/api/watchlist`:
+
+- Connect to #78's verified sessions. `getAuthenticatedUserId(req)` must
+  resolve a stable account ID from the server-verified session, never from
+  request-supplied IDs. For cookie sessions, require CSRF protection for
+  mutations. Unauthenticated requests return 401.
+- Supply a durable team database adapter: `list(userId)` returns that user's
+  bounded, unique symbol list; `add(userId, symbol, limit)` atomically checks
+  existence and capacity, returning `added`, `exists`, or `full`. Enforce atomic
+  uniqueness on (userId, symbol), and idempotently implement
+  `remove(userId, symbol)` scoped to that same user.
+- Pass the same server quote service to both routes to share cache and
+  in-flight protections. Watchlist entries with unavailable quotes preserve
+  their symbols and have null price/change rather than invented values.
+
+The tests use simulated quote responses and a test-only store. A real provider
+key, a production session/store adapter, and deployment are not verified here.

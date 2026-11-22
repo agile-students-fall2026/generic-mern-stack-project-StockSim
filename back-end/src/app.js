@@ -1,20 +1,25 @@
 import express from 'express'
+import cookieParser from 'cookie-parser'
+import { createSessionService } from './services/sessions.js'
+import { createPasswordRecovery } from './services/passwordRecovery.js'
 import createAuthRouter from './routes/auth.js'
 import { createStocksRouter } from './routes/stocks.js'
 import { createMemoryUserStore } from './stores/memoryUserStore.js'
 import { createHoldingsRouter } from './routes/holdings.js'
 
-export function createApp({ userStore = createMemoryUserStore() } = {}) {
+export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery } = {}) {
+  recovery ??= createPasswordRecovery({ userStore, sessions })
   const app = express()
 
   app.disable('x-powered-by')
   app.use(express.json({ limit: '10kb' }))
+  app.use(cookieParser())
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' })
   })
 
-  app.use('/api/auth', createAuthRouter(userStore))
+  app.use('/api/auth', createAuthRouter(userStore, sessions, recovery))
   app.use('/api/stocks', createStocksRouter())
   app.use('/api/holdings', createHoldingsRouter())
 
