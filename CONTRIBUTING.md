@@ -104,27 +104,39 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. Run frontend npm commands inside
-`front-end/`.
+Keep Express running in another terminal with `cd back-end`, `npm ci`, and
+`npm run dev` from the repository root. Open http://localhost:5173. Vite proxies
+`/api` to port 3001; set `API_PROXY_TARGET` when the API uses another port.
+Use the same frontend origin in backend `FRONTEND_ORIGIN` for recovery links.
 
-The app uses React Router in declarative mode with Vite. `/` opens Welcome
-with Create account and Log in options. `/create-account` and `/login` show
-their respective forms without the main navigation;
-`/portfolio`, `/market`, `/learn`, `/leaderboard`, and `/account` share the
-main header and bottom navigation. These section screens are placeholders
-until their features are implemented. Authentication is not implemented yet;
-the access forms skip validation and navigate straight to `/portfolio` on
-submission for the frontend demo. They do not save credentials or create a session.
-The login password field links to `/forgot-password`, which provides an email
-form. Account includes a Reset password option at `/account/reset-password`
-with new-password and confirmation fields. These recovery screens are frontend
-prototypes: they check required inputs and matching passwords but show an
-availability message on submission. They do not send email or change passwords.
+The app uses React Router in declarative mode. `/` opens Welcome;
+`/create-account`, `/login`, `/forgot-password`, and `/reset-password` are public.
+The portfolio, market, learn, leaderboard, and account sections share the main
+navigation and require a valid backend session. Registration creates a temporary
+in-memory account, then returns to login. Forms display API validation and
+request errors. Refresh restores the HttpOnly cookie session via `/api/auth/me`;
+logout revokes it on the server. JWTs and passwords are not stored in browser
+storage. Restarting Express removes all temporary accounts and sessions.
+
+Forgot password and `/account/reset-password` request an email link. Without
+SMTP, inspect the newest private `back-end/.mail/*.json` preview and open its
+`text` link in the browser. To use a browser inbox, configure a private Ethereal
+SMTP account as described in README and log in at https://ethereal.email/login
+with its credentials from your local `.env`. Messages are captured in Ethereal
+rather than delivered to the dummy recipient or written to the JSON outbox. `/reset-password#token=...` removes the fragment
+from history, accepts matching new passwords, and requires login again after
+success. Do not commit `.env`, mail previews, or reset tokens.
+
+Market data and learning/leaderboard samples remain demos. Practice portfolios
+persist per user ID in browser localStorage; this is not database persistence.
 
 Unmatched URLs show Page Unavailable with a link back to Portfolio.
 
 When deploying, configure the host to serve `index.html` for frontend routes
 so that direct links and page refreshes work. Vite handles this locally.
+Reverse-proxy `/api` to Express on the same HTTPS origin in production, and
+configure the backend production secret, SMTP, and `FRONTEND_ORIGIN` as described
+in README. The Vite proxy does not configure your production host.
 
 Do not commit passwords, API keys, or other sensitive information. Follow the repository's `.gitignore`.
 
@@ -136,8 +148,11 @@ Inside `front-end/`, run `npm run lint` and `npm run build` before requesting
 review. Use `npm run dev` to check interface changes in the browser, or
 `npm run preview` to inspect the production build after building it.
 
-An automated feature test suite is not configured yet. Add meaningful tests
-as features are implemented, and include relevant manual verification in the
-pull request description.
+Run `node --test tests/*.test.js` in `front-end/` for the market/practice tests.
+In `back-end/`, run `npm run lint` and `npm run test:coverage` for Mocha/Chai API,
+session, recovery, and frontend API-client integration tests. Include browser
+verification of signup, login, logout, protected-page refresh, recovery, and
+mobile layouts in auth pull requests. Use test fixtures and local mail previews;
+tests should not depend on external services or real email.
 
 
