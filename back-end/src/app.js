@@ -2,6 +2,7 @@ import express from 'express'
 import createAuthRouter from './routes/auth.js'
 import { createStocksRouter } from './routes/stocks.js'
 import { createMemoryUserStore } from './stores/memoryUserStore.js'
+import { createHoldingsRouter } from './routes/holdings.js'
 
 export function createApp({ userStore = createMemoryUserStore() } = {}) {
   const app = express()
@@ -15,6 +16,7 @@ export function createApp({ userStore = createMemoryUserStore() } = {}) {
 
   app.use('/api/auth', createAuthRouter(userStore))
   app.use('/api/stocks', createStocksRouter())
+  app.use('/api/holdings', createHoldingsRouter())
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found.' } })
