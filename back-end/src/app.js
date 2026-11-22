@@ -1,11 +1,13 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import { createSessionService } from './services/sessions.js'
+import { createPasswordRecovery } from './services/passwordRecovery.js'
 import createAuthRouter from './routes/auth.js'
 import { createStocksRouter } from './routes/stocks.js'
 import { createMemoryUserStore } from './stores/memoryUserStore.js'
 
-export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService() } = {}) {
+export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery } = {}) {
+  recovery ??= createPasswordRecovery({ userStore, sessions })
   const app = express()
 
   app.disable('x-powered-by')
@@ -16,7 +18,7 @@ export function createApp({ userStore = createMemoryUserStore(), sessions = crea
     res.json({ status: 'ok' })
   })
 
-  app.use('/api/auth', createAuthRouter(userStore, sessions))
+  app.use('/api/auth', createAuthRouter(userStore, sessions, recovery))
   app.use('/api/stocks', createStocksRouter())
 
   app.use((_req, res) => {

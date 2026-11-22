@@ -8,14 +8,7 @@ import { trustedOrigin } from '../middleware/trustedOrigin.js'
 import { validateLogin } from '../validation/login.js'
 import { DuplicateEmailError } from '../stores/memoryUserStore.js'
 import { validateRegistration } from '../validation/registration.js'
-
-function notImplemented(feature) {
-  return (_req, res) => {
-    res.status(501).json({
-      error: { code: 'NOT_IMPLEMENTED', message: `${feature} is not implemented yet.` },
-    })
-  }
-}
+import { validateForgotPassword, validateResetPassword } from '../validation/passwordRecovery.js'
 
 function publicUser(user) {
   return { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt }
@@ -24,7 +17,7 @@ function publicUser(user) {
 // Do the same password-hashing work for unknown emails as for known users.
 const dummyHash = `scrypt$32768$8$3$${'0'.repeat(32)}$${'0'.repeat(128)}`
 
-export default function createAuthRouter(userStore, sessions) {
+export default function createAuthRouter(userStore, sessions, recovery) {
   const router = Router()
   const loginLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -66,7 +59,7 @@ export default function createAuthRouter(userStore, sessions) {
         error: { code: 'INVALID_CREDENTIALS', message: 'Email or password is incorrect.' },
       })
     }
-    const token = sessions.issue(user.id)
+    const token = sessions.issue(user.id, user.authVersion)
     sessions.revoke(req.cookies[SESSION_COOKIE])
     res.cookie(SESSION_COOKIE, token, { ...sessions.cookieOptions, maxAge: SESSION_SECONDS * 1000 })
     res.json({ user: publicUser(user) })
@@ -81,8 +74,29 @@ export default function createAuthRouter(userStore, sessions) {
   router.get('/me', requireAuth(userStore, sessions), (req, res) => {
     res.json({ user: publicUser(req.user) })
   })
-  router.post('/forgot-password', notImplemented('Password recovery'))
-  router.post('/reset-password', notImplemented('Password reset'))
+  const forgotLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false,
+    message: { error: { code: 'TOO_MANY_RESET_REQUESTS', message: 'Too many reset requests. Try again in 15 minutes.' } },
+  })
+  const resetLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: 'draft-8', legacyHeaders: false,
+    message: { error: { code: 'TOO_MANY_RESET_ATTEMPTS', message: 'Too many reset attempts. Try again in 15 minutes.' } },
+  })
+
+  router.post('/forgot-password', forgotLimit, validateForgotPassword, (req, res) => {
+    const { email } = matchedData(req, { locations: ['body'] })
+    recovery.request(email)
+    res.status(202).json({ message: 'If an account exists for that email, you will receive a password reset link.' })
+  })
+
+  router.post('/reset-password', resetLimit, validateResetPassword, async (req, res) => {
+    const { token, password } = matchedData(req, { locations: ['body'] })
+    if (!await recovery.reset(token, password)) {
+      return res.status(400).json({ error: { code: 'INVALID_RESET_TOKEN', message: 'This reset link is invalid or has expired. Request a new one.' } })
+    }
+    res.clearCookie(SESSION_COOKIE, sessions.cookieOptions)
+    res.json({ message: 'Your password has been reset. Please log in with your new password.' })
+  })
 
   return router
 }

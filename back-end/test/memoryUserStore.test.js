@@ -44,6 +44,21 @@ describe('Temporary user store', () => {
     expect(await store.findById('missing')).to.equal(null)
   })
 
+  it('updates a password and advances the account version atomically', async () => {
+    const store = createMemoryUserStore()
+    const created = await store.create(user)
+    expect(created.authVersion).to.equal(0)
+    const results = await Promise.all([
+      store.updatePassword(created.id, 'first-new-hash', 0),
+      store.updatePassword(created.id, 'second-new-hash', 0),
+    ])
+    expect(results.filter(Boolean)).to.have.lengthOf(1)
+    const changed = await store.findById(created.id)
+    expect(changed.passwordHash).to.equal('first-new-hash')
+    expect(changed.authVersion).to.equal(1)
+    expect(await store.updatePassword('missing', 'hash', 0)).to.equal(null)
+  })
+
   it('starts empty for a new app/server store', async () => {
     await createMemoryUserStore().create(user)
     expect(await createMemoryUserStore().findByEmail(user.email)).to.equal(null)

@@ -38,23 +38,28 @@ export function createSessionService({
     }
     if (!claims || typeof claims !== 'object' || typeof claims.jti !== 'string' || typeof claims.sub !== 'string') return null
     const session = sessions.get(claims.jti)
-    if (!session || session.userId !== claims.sub || session.expiresAt !== claims.exp) return null
-    return { userId: session.userId, sessionId: claims.jti }
+    if (!session || session.userId !== claims.sub || session.expiresAt !== claims.exp || session.authVersion !== claims.ver) return null
+    return { userId: session.userId, sessionId: claims.jti, authVersion: session.authVersion }
   }
 
   return {
     cookieOptions,
-    issue(userId) {
+    issue(userId, authVersion = 0) {
       removeExpired()
       const id = randomUUID()
       const issuedAt = Math.floor(now() / 1000)
-      const token = jwt.sign({ sub: userId, jti: id, iat: issuedAt }, secret, {
+      const token = jwt.sign({ sub: userId, jti: id, iat: issuedAt, ver: authVersion }, secret, {
         algorithm: 'HS256', issuer, audience, expiresIn: SESSION_SECONDS,
       })
-      sessions.set(id, { userId, expiresAt: issuedAt + SESSION_SECONDS })
+      sessions.set(id, { userId, authVersion, expiresAt: issuedAt + SESSION_SECONDS })
       return token
     },
     read,
+    revokeAll(userId) {
+      for (const [id, session] of sessions) {
+        if (session.userId === userId) sessions.delete(id)
+      }
+    },
     revoke(token) {
       const session = read(token)
       if (session) sessions.delete(session.sessionId)
