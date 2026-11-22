@@ -11,7 +11,7 @@ const latestPrices = {
   MSFT: 310,
 }
 
-function getHoldings() {
+export function getHoldings() {
   return holdings.map((holding) => {
     const latestPrice = latestPrices[holding.symbol] ?? null
     const marketValue = latestPrice === null ? null : holding.shares * latestPrice
