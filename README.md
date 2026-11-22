@@ -66,7 +66,9 @@ npm ci
 npm run dev -- --host 127.0.0.1
 ```
 
-Open the URL Vite prints, then visit `/market`. Run checks from `front-end/`:
+Keep the backend running in a second terminal (see below). Open
+http://localhost:5173, create an account, then log in to visit `/market` and the
+other app sections. Run checks from `front-end/`:
 
 ```bash
 node --test tests/*.test.js
@@ -98,9 +100,11 @@ Day uses the intraday samples, Week uses the last 7 daily points, and All means
 all 14 available days, not a full year. Each point occupies one readable JSON line.
 
 The demo starts with $10,000 and no holdings. Watchlist, virtual balance, holdings,
-and trade records persist in this browser's `stocksim-practice-v1` localStorage
-entry. This is a single demo account, not authenticated or isolated by user;
-use one tab at a time. If storage is unavailable, a notice explains that changes
+and trade records persist in this browser's `stocksim-practice-v1:<user-id>`
+localStorage entry. Each signed-in account has a separate practice account;
+logging out unmounts that account's state. Older anonymous demo data is not
+imported. This remains browser-local demo data, not server persistence; use one
+tab at a time. If storage is unavailable, a notice explains that changes
 last only for the current page session. Portfolio summary, holding details,
 transaction history, transaction details, and the current Performance totals use
 this same account and market quotes. Holding Buy/Sell links open the selected
@@ -110,8 +114,8 @@ average cost; incomplete purchase history is shown as unavailable. Missing marke
 quotes show an error instead of silently understating the portfolio value.
 
 The Performance chart remains the team's separate sample historical series,
-clearly labeled as such; it is not a history of this account. Account and
-leaderboard sample data are not synchronized with trading. Live quote refresh,
+clearly labeled as such; it is not a history of this account. Account and Profile show the signed-in user. Leaderboard standings and
+learning/achievement data remain samples and are not synchronized with trading. Live quote refresh,
 server execution, pending/unknown order states, and contextual learning overlays
 are not implemented in this demo.
 
@@ -148,9 +152,43 @@ authentication routes:
 | POST | `/api/auth/reset-password` | Set a new password |
 
 Registration, login, logout, forgot/reset password, and the protected
-`GET /api/auth/me` endpoint are implemented. The frontend forms still use the
-original demo navigation; frontend integration remains step 5. Test the backend
-with API requests or the Mocha/Chai suite for now.
+`GET /api/auth/me` endpoint are connected to the React frontend.
+
+### Connected browser authentication (step 5)
+
+Run the backend and frontend in separate terminals. Vite forwards relative
+`/api` requests to `http://127.0.0.1:3001`, keeping requests and the HttpOnly
+session cookie on the browser's origin. No browser CORS configuration is needed.
+If the API uses another port, start Vite with, for example,
+`API_PROXY_TARGET=http://127.0.0.1:3002 npm run dev`. Vite preview uses the same
+proxy. Set backend `FRONTEND_ORIGIN` to the exact frontend origin you use for
+password-reset links (default `http://localhost:5173`).
+
+- Create account validates through the API and returns to login with the email
+  prefilled. It does not automatically log in.
+- Login sends credentials to the API. Protected app routes require a valid
+  session, restore it through `/api/auth/me` on refresh, and recheck on navigation,
+  window focus, and once a minute while visible. API failures offer a retry;
+  `401` returns to login. A successful login returns to the requested app page.
+- Account and Profile display the current user's public details. Logout calls
+  the server before clearing local auth state; a failed request offers retry.
+  JWTs and passwords are never stored in localStorage or sessionStorage.
+- Forgot password and Account → Reset password request an email link. With
+  Ethereal configured, open the message in its browser inbox (setup below).
+  Without SMTP, open the newest `back-end/.mail/*.json` and copy the URL from
+  its `text` field into the browser. `/reset-password#token=...` reads the token into
+  page memory and removes it from the address bar. Submit matching passwords,
+  then log in again. Reloading after the fragment is removed requires reopening
+  the email link. Invalid or expired links offer a new request.
+
+Users, sessions, and reset tokens remain in memory: restarting the backend
+clears them, including automatic development restarts. No database is added.
+Financial demo data remains in browser storage; the frontend route guard does
+not add server authorization to other API endpoints.
+
+For deployment, serve the frontend and reverse-proxy `/api` to Express on the
+same HTTPS origin, with the backend's production configuration below. The Vite
+proxy is a local development/preview facility, not the production server.
 
 ### Account registration (#77)
 
@@ -229,8 +267,8 @@ requests return `429` with a retry header. Successful logins do not consume that
 failed-attempt allowance. Browser authentication submissions reject untrusted
 origins and cross-site Fetch Metadata headers. The API's own origin, the configured
 `FRONTEND_ORIGIN` (default `http://localhost:5173`), and `http://127.0.0.1:5173`
-are allowed. API tools without browser origin headers are supported. CORS and
-frontend requests will be configured during frontend integration.
+are allowed. API tools without browser origin headers are supported. The frontend uses the same-origin Vite proxy described above; cookie-bearing
+requests do not require cross-origin CORS.
 
 In development, an omitted/empty `JWT_SECRET` generates a random in-memory key.
 For production (`NODE_ENV=production`), set a secret of at least 32 bytes in the
@@ -288,9 +326,9 @@ token store. A new request replaces any earlier active link for that account.
 Links are built from the configured `FRONTEND_ORIGIN`, never the request Host
 header, and use `/reset-password#token=...`. The fragment keeps the token out of
 the HTTP request URL and referrers. In production this configured origin must
-use HTTPS. The public reset page and reading/submitting this fragment are part
-of frontend integration in step 5; the current frontend recovery forms remain
-prototypes. Use the API to test resets before that integration.
+use HTTPS. The public frontend reset page reads this fragment and posts the
+new password to the API. It removes the fragment from browser history and does
+not persist the token in browser storage.
 
 `POST /api/auth/reset-password` accepts JSON with `token`, `password`, and
 `confirmPassword`. The new password follows the registration policy (8 to 128
@@ -343,6 +381,36 @@ active sessions, reset tokens, and queued delivery work are in memory and reset
 on server restart. Email preview files may remain on disk but old links stop
 working. Automatic development restarts also clear this temporary state.
 
+#### Ethereal browser inbox for demos
+
+For a free browser inbox, create a test SMTP account at
+[ethereal.email](https://ethereal.email/) and copy its settings into the ignored
+`back-end/.env`. Each developer should create their own test account; do not
+share or commit its credentials. No additional dependencies are needed.
+
+```dotenv
+SMTP_HOST=smtp.ethereal.email
+SMTP_PORT=587
+SMTP_USER=YOUR_ETHEREAL_USERNAME
+SMTP_PASS=YOUR_ETHEREAL_PASSWORD
+MAIL_FROM="StockSim <YOUR_ETHEREAL_USERNAME>"
+FRONTEND_ORIGIN=http://127.0.0.1:5173
+```
+
+Restart the backend after changing `.env`, then open http://127.0.0.1:5173.
+Register a dummy address such as `user123@example.com` and request a reset.
+Sign in at [Ethereal](https://ethereal.email/login) using `SMTP_USER` and
+`SMTP_PASS` from your local `.env`, then open its Messages inbox and the reset
+email. Click the link to set a new password; the old password must stop working.
+The account must exist in the currently running StockSim backend first.
+
+Ethereal captures SMTP messages addressed to real or made-up recipients. It
+never delivers them to Gmail or other real inboxes. In this mode, messages are
+in Ethereal rather than the local JSON outbox. The browser still gets the same
+generic recovery response, without SMTP credentials or reset tokens. Use dummy
+data for this development-only mailbox. Keep the backend running while testing;
+a restart invalidates temporary accounts and reset links.
+
 #### Optional SMTP delivery
 
 For delivery through a development SMTP server or email provider, configure
@@ -352,8 +420,9 @@ provided together when authentication is used. Production requires SMTP
 configuration and TLS, and never falls back to local preview files. Connection,
 greeting, and socket timeouts are bounded. Transport debugging is disabled to
 avoid logging credentials or reset messages. Tests use local previews or injected
-transports and do not send real email; live SMTP still needs verification with
-your provider credentials.
+transports and do not use external SMTP. Verify delivery separately whenever
+you configure a provider; Ethereal captures test mail rather than delivering
+it to recipients.
 
 The reset implementation follows the
 [OWASP forgot-password guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
@@ -369,7 +438,11 @@ npm test
 npm run test:coverage
 ```
 
-Tests use Mocha, Chai, and Supertest. The c8 command reports coverage for all
+Tests use Mocha, Chai, and Supertest. `frontendAuthIntegration.test.js` also
+exercises the actual frontend API client against isolated Express servers for
+registration, login/logout, session expiry, recovery, and request failures.
+These tests need only the backend dependencies and do not send real email.
+The c8 command reports coverage for all
 backend source files, writes an HTML report to `back-end/coverage/index.html`,
 and enforces the course's minimum 10% coverage requirement.
 

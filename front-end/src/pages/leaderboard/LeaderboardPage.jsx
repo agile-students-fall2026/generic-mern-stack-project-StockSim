@@ -2,7 +2,8 @@ import { useState } from 'react'
 import PageIntro from '../../components/layout/PageIntro.jsx'
 import Modal from '../../components/ui/Modal.jsx'
 import { formatSignedPercent } from '../../components/ui/format.js'
-import { leaderboardAllTime, leaderboardThisMonth, user } from '../../services/mockData.js'
+import { leaderboardAllTime, leaderboardThisMonth } from '../../services/mockData.js'
+import { useAuth } from '../../context/AuthContext.js'
 
 const periods = [
   { id: 'month', label: 'This month', rows: leaderboardThisMonth },
@@ -10,6 +11,7 @@ const periods = [
 ]
 
 function LeaderboardPage() {
+  const { user } = useAuth()
   // sharing: 'private' | 'sharing' | 'left' - stands in for the back-end setting.
   const [sharing, setSharing] = useState('private')
   const [period, setPeriod] = useState('month')
@@ -47,7 +49,7 @@ function LeaderboardPage() {
           <>
             <p className="font-[650]">You are sharing performance</p>
             <p className="mt-1 text-muted">
-              {user.displayName} | Rank {you?.rank} | Return {you ? formatSignedPercent(you.returnPercent) : ''}
+              {user.name} | Rank {you?.rank} | Return {you ? formatSignedPercent(you.returnPercent) : ''}
             </p>
             <button
               type="button"
@@ -116,7 +118,7 @@ function LeaderboardPage() {
               }`}
             >
               <p className="font-[650]">
-                {row.rank} | {row.name} {row.isYou && <span className="text-selected-ink">· You</span>}
+                {row.rank} | {row.isYou ? user.name : row.name} {row.isYou && <span className="text-selected-ink">· You</span>}
               </p>
               <p className="text-sm font-[650]">Return {formatSignedPercent(row.returnPercent)}</p>
             </li>

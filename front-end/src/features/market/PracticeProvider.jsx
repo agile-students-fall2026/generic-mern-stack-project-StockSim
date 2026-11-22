@@ -2,16 +2,16 @@ import { useRef, useState } from 'react'
 import { PracticeContext } from './PracticeContext.js'
 import { emptyAccount, executeTrade, isPracticeAccount } from './practice.js'
 
-const key = 'stocksim-practice-v1'
-function readAccount() {
+function readAccount(key) {
   try {
     const saved = JSON.parse(localStorage.getItem(key))
     return isPracticeAccount(saved) ? saved : emptyAccount
   } catch { return emptyAccount }
 }
 
-export default function PracticeProvider({ children }) {
-  const [account, setAccount] = useState(readAccount)
+export default function PracticeProvider({ children, accountId }) {
+  const key = `stocksim-practice-v1:${accountId}`
+  const [account, setAccount] = useState(() => readAccount(key))
   const current = useRef(account)
   const [storageWarning, setStorageWarning] = useState(false)
   function save(next) {
