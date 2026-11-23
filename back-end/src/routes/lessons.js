@@ -1,17 +1,11 @@
 import { Router } from 'express'
-import { getLessonById, getLessonSummaries, getLessonsByActivity } from '../models/lesson.js'
+import { getLessonById, getLessonSummaries } from '../models/lesson.js'
 
 export function createLessonsRouter() {
   const router = Router()
 
   router.get('/', (_req, res) => {
     res.json(getLessonSummaries())
-  })
-
-  // suggestions for lessons based on the activity
-  router.get('/suggestions', (req, res) => {
-    const activity = req.query.activity || ''
-    res.json(getLessonsByActivity(activity))
   })
 
   router.get('/:id', (req, res) => {
