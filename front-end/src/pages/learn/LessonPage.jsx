@@ -1,55 +1,11 @@
-import { useEffect, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router'
+import { lessons } from '../../services/mockData.js'
 
 function LessonPage() {
   const { lessonId } = useParams()
   const { completedLessons, setCompletedLessons } = useOutletContext()
-  const [lesson, setLesson] = useState(null)
-  const [loadedId, setLoadedId] = useState('')
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-
-    fetch(`/api/lessons/${lessonId}`)
-      .then((response) => {
-        if (response.status === 404) {
-          return null
-        }
-        if (!response.ok) {
-          throw new Error('Could not load this lesson.')
-        }
-        return response.json()
-      })
-      .then((data) => {
-        if (cancelled) {
-          return
-        }
-        setLesson(data)
-        setError('')
-        setLoadedId(lessonId)
-      })
-      .catch(() => {
-        if (cancelled) {
-          return
-        }
-        setLesson(null)
-        setError('Could not load this lesson.')
-        setLoadedId(lessonId)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [lessonId])
-
-  if (loadedId !== lessonId) {
-    return <p className="rounded-2xl bg-hover p-6">Loading lesson...</p>
-  }
-
-  if (error) {
-    return <p className="rounded-2xl border border-border p-6">{error}</p>
-  }
+  const lessonIndex = lessons.findIndex((item) => item.id === lessonId)
+  const lesson = lessons[lessonIndex]
 
   if (!lesson) {
     return (
@@ -67,6 +23,9 @@ function LessonPage() {
     )
   }
 
+  const lessonNumber = lessonIndex + 1
+  const previousLesson = lessonIndex > 0 ? lessons[lessonIndex - 1] : null
+  const nextLesson = lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null
   const isComplete = completedLessons.includes(lesson.id)
 
   function markAsComplete() {
@@ -84,7 +43,7 @@ function LessonPage() {
         Back
       </Link>
       <p className="text-sm font-[650] tracking-[0.08em] text-muted uppercase">
-        Lesson {lesson.lessonNumber} of {lesson.lessonCount} | {lesson.duration}
+        Lesson {lessonNumber} of {lessons.length} | {lesson.duration}
       </p>
       <h1 tabIndex={-1} className="mt-2 text-4xl font-semibold tracking-[-0.04em]">
         {lesson.title}
@@ -111,17 +70,17 @@ function LessonPage() {
       )}
 
       <div className="mt-8 flex flex-col gap-3">
-        {lesson.previousLessonId && (
+        {previousLesson && (
           <Link
-            to={`/learn/${lesson.previousLessonId}`}
+            to={`/learn/${previousLesson.id}`}
             className="inline-flex min-h-12 items-center justify-center rounded-[2rem] border border-border px-6 py-3.5 font-[650] text-ink no-underline hover:bg-hover"
           >
             Previous lesson
           </Link>
         )}
-        {lesson.nextLessonId && (
+        {nextLesson && (
           <Link
-            to={`/learn/${lesson.nextLessonId}`}
+            to={`/learn/${nextLesson.id}`}
             className="inline-flex min-h-12 items-center justify-center rounded-[2rem] border border-border px-6 py-3.5 font-[650] text-ink no-underline hover:bg-hover"
           >
             Next lesson
