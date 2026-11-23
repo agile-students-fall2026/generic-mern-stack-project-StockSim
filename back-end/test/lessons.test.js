@@ -30,6 +30,23 @@ describe('lesson endpoints', () => {
     expect(response.body.nextLessonId).to.equal('balanced-portfolio')
   })
 
+  it('returns lessons that match one activity', async () => {
+    const buying = await request(app).get('/api/lessons/suggestions?activity=buying')
+    const portfolio = await request(app).get('/api/lessons/suggestions?activity=portfolio')
+    const unknown = await request(app).get('/api/lessons/suggestions?activity=nothing')
+
+    expect(buying.status).to.equal(200)
+    expect(buying.body).to.have.length(1)
+    expect(buying.body[0].id).to.equal('market-orders')
+
+    expect(portfolio.status).to.equal(200)
+    expect(portfolio.body).to.have.length(4)
+    expect(portfolio.body[0].id).to.equal('first-steps')
+
+    expect(unknown.status).to.equal(200)
+    expect(unknown.body).to.have.length(0)
+  })
+
   it('returns 404 when the lesson does not exist', async () => {
     const response = await request(app).get('/api/lessons/missing')
 
