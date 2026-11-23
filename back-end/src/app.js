@@ -7,7 +7,6 @@ import { createStocksRouter } from './routes/stocks.js'
 import { createMemoryUserStore } from './stores/memoryUserStore.js'
 import { createHoldingsRouter } from './routes/holdings.js'
 import { createLessonsRouter } from './routes/lessons.js'
-import { createGlossaryRouter } from './routes/glossary.js'
 import { createPortfolioRouter } from './routes/portfolio.js'
 
 export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery } = {}) {
@@ -26,7 +25,6 @@ export function createApp({ userStore = createMemoryUserStore(), sessions = crea
   app.use('/api/stocks', createStocksRouter())
   app.use('/api/holdings', createHoldingsRouter())
   app.use('/api/lessons', createLessonsRouter())
-  app.use('/api/glossary', createGlossaryRouter())
   app.use('/api/portfolio', createPortfolioRouter())
 
   app.use((_req, res) => {
