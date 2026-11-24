@@ -30,6 +30,7 @@ export function createStockHistory({
   now = Date.now,
   timeoutMs = 15000,
   cacheTtlMs = 6 * 60 * 60 * 1000,
+  store = null,
 } = {}) {
   const cache = new Map()
   const pending = new Map()
@@ -59,14 +60,20 @@ export function createStockHistory({
 
   return async symbol => {
     if (typeof apiKey !== 'string' || !apiKey.trim()) throw new StockHistoryError('HISTORY_NOT_CONFIGURED')
-    const cached = cache.get(symbol)
+    let cached = cache.get(symbol)
+    if (!cached) {
+      const saved = store?.get(symbol)
+      if (saved?.value?.symbol === symbol && saved.value.dataTiming === 'end_of_day' && Array.isArray(saved.value.points)) cached = saved
+    }
     if (cached?.expires > now()) return cached.value
     if (cached) cache.delete(symbol)
     if (pending.has(symbol)) return pending.get(symbol)
     if (limitedUntil > now()) throw new StockHistoryError('HISTORY_RATE_LIMITED')
     if (pending.size >= 3) throw new StockHistoryError('HISTORY_BUSY')
     const promise = load(symbol).then(value => {
-      cache.set(symbol, { value, expires: now() + cacheTtlMs })
+      const entry = { value, expires: now() + cacheTtlMs }
+      cache.set(symbol, entry)
+      store?.set(symbol, entry)
       if (cache.size > 100) cache.delete(cache.keys().next().value)
       return value
     }).finally(() => pending.delete(symbol))
