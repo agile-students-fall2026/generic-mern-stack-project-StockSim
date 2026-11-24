@@ -3,6 +3,10 @@ import cookieParser from 'cookie-parser'
 import { createSessionService } from './services/sessions.js'
 import { createPasswordRecovery } from './services/passwordRecovery.js'
 import createAuthRouter from './routes/auth.js'
+import { requireAuth } from './middleware/requireAuth.js'
+import { trustedOrigin } from './middleware/trustedOrigin.js'
+import { createWatchlistRouter } from './routes/watchlist.js'
+import { createStockQuote } from './services/stockQuote.js'
 import { createStocksRouter } from './routes/stocks.js'
 import { createMemoryUserStore } from './stores/memoryUserStore.js'
 import { createHoldingsRouter } from './routes/holdings.js'
@@ -10,7 +14,7 @@ import { createLessonsRouter } from './routes/lessons.js'
 import { createGlossaryRouter } from './routes/glossary.js'
 import { createPortfolioRouter } from './routes/portfolio.js'
 
-export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery } = {}) {
+export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery, watchlistStore, quote = createStockQuote() } = {}) {
   recovery ??= createPasswordRecovery({ userStore, sessions })
   const app = express()
 
@@ -23,7 +27,18 @@ export function createApp({ userStore = createMemoryUserStore(), sessions = crea
   })
 
   app.use('/api/auth', createAuthRouter(userStore, sessions, recovery))
-  app.use('/api/stocks', createStocksRouter())
+  app.use('/api/stocks', createStocksRouter({ quote }))
+  if (watchlistStore) {
+    app.use('/api/watchlist', trustedOrigin, requireAuth(userStore, sessions), createWatchlistRouter({
+      getAuthenticatedUserId: req => req.user.id,
+      store: watchlistStore,
+      quote,
+    }))
+  } else {
+    app.use('/api/watchlist', (_req, res) => res.status(503).json({
+      error: { code: 'WATCHLIST_NOT_CONFIGURED', message: 'Account watchlist storage is not configured.' },
+    }))
+  }
   app.use('/api/holdings', createHoldingsRouter())
   app.use('/api/lessons', createLessonsRouter())
   app.use('/api/glossary', createGlossaryRouter())

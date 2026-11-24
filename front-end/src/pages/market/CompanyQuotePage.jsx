@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import SaveCompanyButton from '../../features/market/SaveCompanyButton.jsx'
 import PageIntro from '../../components/layout/PageIntro.jsx'
 
 const messages = {
@@ -44,6 +45,7 @@ function CompanyQuote({ symbol }) {
   return <>
     <PageIntro eyebrow="Market · End-of-day quote" title={symbol} description="Latest available end-of-day data, not a live price. Informational only." />
     <Link to="/market" className="mb-6 inline-block font-semibold">Back to Market</Link>
+    <SaveCompanyButton symbol={symbol} />
     {state.status === 'loading' && <p role="status">Loading {symbol} quote…</p>}
     {state.status === 'error' && <div>
       <p role="alert">{state.message}</p>

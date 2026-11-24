@@ -3,9 +3,10 @@ import { describe, it } from 'mocha'
 import assert from 'node:assert/strict'
 import express from 'express'
 import request from 'supertest'
-import app from '../src/app.js'
+import app, { createApp } from '../src/app.js'
 import { createStocksRouter } from '../src/routes/stocks.js'
 import { createWatchlistRouter } from '../src/routes/watchlist.js'
+import { createMemoryUserStore } from '../src/stores/memoryUserStore.js'
 import { createStockQuote } from '../src/services/stockQuote.js'
 
 const providerReply = (data, status = 200) => ({ status, ok: status === 200, json: async () => data })
@@ -46,7 +47,7 @@ describe('Stock quote API', () => {
     }) })
     assert.equal((await quote('AAPL')).tradingDate, null)
     await request(app).get('/api/stocks/a%20b/quote').expect(400)
-    await request(app).get('/api/watchlist').expect(404)
+    await request(app).get('/api/watchlist').expect(503)
   })
 
   it('handles missing configuration, no data, sanitized failures and quota cooldown', async () => {
@@ -124,5 +125,46 @@ describe('Unmounted watchlist router', () => {
     trustedSessionId = 'alice'
     await request(instance).delete('/watchlist/aapl').expect(204)
     assert.deepEqual(list('alice'), ['MSFT'])
+  })
+})
+
+describe('Account watchlist API', () => {
+  it('connects login, add/remove, and account isolation without depending on quote availability', async () => {
+    const saved = new Map()
+    const userStore = createMemoryUserStore()
+    const watchlistStore = {
+      async list(id) { return [...(saved.get(id) || [])] },
+      async add(id, symbol) {
+        const list = saved.get(id) || new Set()
+        if (list.has(symbol)) return 'exists'
+        list.add(symbol)
+        saved.set(id, list)
+        return 'added'
+      },
+      async remove(id, symbol) { saved.get(id)?.delete(symbol) },
+    }
+    const start = () => createApp({ userStore, watchlistStore, quote: async () => { throw new Error('No quote') } })
+    const firstApp = start()
+    await request(firstApp).get('/api/watchlist').expect(401)
+    const logIn = async (api, email, register = true) => {
+      const password = 'Example-pass-123!'
+      if (register) await api.post('/api/auth/register').send({ name: 'Demo', email, password }).expect(201)
+      await api.post('/api/auth/login').send({ email, password }).expect(200)
+    }
+    const first = request.agent(firstApp)
+    await logIn(first, 'first@example.com')
+    await first.post('/api/watchlist').set('Origin', 'https://not-stocksim.example').send({ symbol: 'AAPL' }).expect(403)
+    await first.post('/api/watchlist').send({ symbol: 'aapl' }).expect(201)
+    await first.post('/api/watchlist').send({ symbol: 'AAPL' }).expect(200)
+    const restarted = start()
+    const other = request.agent(restarted)
+    await logIn(other, 'other@example.com')
+    await other.get('/api/watchlist').expect(200, { items: [] })
+    const reconnected = request.agent(restarted)
+    await logIn(reconnected, 'first@example.com', false)
+    const listed = await reconnected.get('/api/watchlist').expect(200)
+    assert.deepEqual(listed.body.items, [{ symbol: 'AAPL', price: null, change: null, quote: null, quoteStatus: 'unavailable' }])
+    await reconnected.delete('/api/watchlist/AAPL').expect(204)
+    await reconnected.get('/api/watchlist').expect(200, { items: [] })
   })
 })
