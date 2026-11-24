@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import PageIntro from '../../components/layout/PageIntro.jsx'
+import PriceChart from '../../features/market/PriceChart.jsx'
+import useHistory from '../../features/market/useHistory.js'
 
 const messages = {
   QUOTE_NOT_FOUND: 'No end-of-day quote was found for this ticker.',
@@ -15,6 +17,7 @@ const signed = new Intl.NumberFormat('en-US', { maximumFractionDigits: 6, signDi
 function CompanyQuote({ symbol }) {
   const [state, setState] = useState({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const history = useHistory(symbol)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -52,6 +55,9 @@ function CompanyQuote({ symbol }) {
         setAttempt(value => value + 1)
       }}>Try again</button>
     </div>}
+    {state.status === 'ready' && history.loading && <p role="status" className="mt-6">Loading price history…</p>}
+    {state.status === 'ready' && history.error && <p role="status" className="mt-6">{history.error}</p>}
+    {state.status === 'ready' && history.points && <div className="mt-6"><PriceChart real stock={{ name: symbol, history: history.points }} /></div>}
     {state.status === 'ready' && <dl className="grid gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
       <div><dt>Price</dt><dd className="font-semibold">{number.format(state.data.price)}</dd></div>
       <div><dt>Daily change</dt><dd className="font-semibold">{signed.format(state.data.change)}</dd></div>
