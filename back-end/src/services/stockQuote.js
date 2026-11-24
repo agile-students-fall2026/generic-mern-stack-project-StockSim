@@ -37,7 +37,7 @@ export function createStockQuote({
   apiKey = process.env.ALPHA_VANTAGE_API_KEY,
   fetchFn = globalThis.fetch,
   now = Date.now,
-  timeoutMs = 5000,
+  timeoutMs = 15000,
 } = {}) {
   const cache = new Map()
   const pending = new Map()

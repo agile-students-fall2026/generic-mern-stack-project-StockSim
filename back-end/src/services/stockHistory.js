@@ -28,7 +28,7 @@ export function createStockHistory({
   apiKey = process.env.ALPHA_VANTAGE_API_KEY,
   fetchFn = globalThis.fetch,
   now = Date.now,
-  timeoutMs = 5000,
+  timeoutMs = 15000,
   cacheTtlMs = 6 * 60 * 60 * 1000,
 } = {}) {
   const cache = new Map()

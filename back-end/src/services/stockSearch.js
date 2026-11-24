@@ -19,7 +19,7 @@ export function createStockSearch({
   apiKey = process.env.ALPHA_VANTAGE_API_KEY,
   fetchFn = globalThis.fetch,
   now = Date.now,
-  timeoutMs = 5000,
+  timeoutMs = 10000,
   cacheTtlMs = 300000,
   cacheLimit = 100,
 } = {}) {
