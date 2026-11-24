@@ -1,9 +1,13 @@
 import { Router } from 'express'
+import { fileURLToPath } from 'node:url'
+import { createDiskCache } from '../services/diskCache.js'
 import { createStockQuote, normalizeStockSymbol, StockQuoteError } from '../services/stockQuote.js'
 import { createStockHistory, StockHistoryError } from '../services/stockHistory.js'
 import { createStockSearch, StockSearchError } from '../services/stockSearch.js'
 
-export function createStocksRouter({ search = createStockSearch(), quote = createStockQuote(), history = createStockHistory() } = {}) {
+const savedCopy = (name) => createDiskCache(fileURLToPath(new URL(`../../.cache/${name}.json`, import.meta.url)))
+
+export function createStocksRouter({ search = createStockSearch(), quote = createStockQuote({ store: savedCopy('quotes') }), history = createStockHistory({ store: savedCopy('history') }) } = {}) {
   const router = Router()
   router.get('/search', async (req, res, next) => {
     const query = typeof req.query.q === 'string' ? req.query.q.trim() : ''
