@@ -38,6 +38,7 @@ export function createStockQuote({
   fetchFn = globalThis.fetch,
   now = Date.now,
   timeoutMs = 15000,
+  store = null,
 } = {}) {
   const cache = new Map()
   const pending = new Map()
@@ -81,7 +82,11 @@ export function createStockQuote({
 
   return async symbol => {
     if (typeof apiKey !== 'string' || !apiKey.trim()) throw new StockQuoteError('QUOTE_NOT_CONFIGURED')
-    const cached = cache.get(symbol)
+    let cached = cache.get(symbol)
+    if (!cached) {
+      const saved = store?.get(symbol)
+      if (saved?.value?.symbol === symbol && saved.value.dataTiming === 'end_of_day' && saved.value.price > 0) cached = saved
+    }
     if (cached?.expires > now()) {
       if (cached.value === null) throw new StockQuoteError('QUOTE_NOT_FOUND')
       return cached.value
@@ -91,7 +96,9 @@ export function createStockQuote({
     if (limitedUntil > now()) throw new StockQuoteError('QUOTE_RATE_LIMITED')
     if (pending.size >= 3) throw new StockQuoteError('QUOTE_BUSY')
     function remember(value, ttl) {
-      cache.set(symbol, { value, expires: now() + ttl })
+      const entry = { value, expires: now() + ttl }
+      cache.set(symbol, entry)
+      if (value) store?.set(symbol, entry)
       if (cache.size > 100) cache.delete(cache.keys().next().value)
     }
     const promise = load(symbol).then(value => {
