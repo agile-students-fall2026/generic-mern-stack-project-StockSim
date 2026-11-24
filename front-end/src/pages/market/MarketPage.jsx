@@ -12,7 +12,7 @@ function MarketPage() {
     <Link to="/market/watchlist" className="mb-6 inline-block rounded-xl border border-border px-5 py-3 font-semibold no-underline">View watchlist →</Link>
     <MarketSearch />
     <h2 className="mb-2 text-xl font-semibold">Practice investments</h2>
-    <p className="mb-4 text-sm text-muted">Fictional prices and companies for simulated trading, separate from company search above.</p>
+    <p className="mb-4 text-sm text-muted">Fictional companies with made-up prices for practice. Stocks from search use real end-of-day prices.</p>
     <MarketState {...market} />
     {!market.loading && !market.error && <section aria-label="Practice investments"><StockList stocks={market.stocks} /></section>}
   </>
