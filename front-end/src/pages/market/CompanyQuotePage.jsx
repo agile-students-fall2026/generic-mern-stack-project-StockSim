@@ -42,7 +42,7 @@ function CompanyQuote({ symbol }) {
   }, [symbol, attempt])
 
   return <>
-    <PageIntro eyebrow="Market · End-of-day quote" title={symbol} description="Latest available end-of-day data, not a live price. Informational only." />
+    <PageIntro eyebrow="Market · End-of-day quote" title={symbol} description="Latest available end-of-day data, not a live price. Practice trades use this price." />
     <Link to="/market" className="mb-6 inline-block font-semibold">Back to Market</Link>
     {state.status === 'loading' && <p role="status">Loading {symbol} quote…</p>}
     {state.status === 'error' && <div>
@@ -58,6 +58,10 @@ function CompanyQuote({ symbol }) {
       <div><dt>Daily change (%)</dt><dd className="font-semibold">{Number.isFinite(state.data.changePercent) ? `${signed.format(state.data.changePercent)}%` : 'Not provided'}</dd></div>
       <div><dt>Trading date</dt><dd className="font-semibold">{state.data.tradingDate || 'Not provided'}</dd></div>
     </dl>}
+    {state.status === 'ready' && <div className="mt-6 grid grid-cols-2 gap-3">
+      <Link to={`/market/${encodeURIComponent(symbol)}/buy`} className="rounded-xl bg-accent px-5 py-4 text-center font-semibold no-underline">Buy</Link>
+      <Link to={`/market/${encodeURIComponent(symbol)}/sell`} className="rounded-xl border border-border px-5 py-4 text-center font-semibold no-underline">Sell</Link>
+    </div>}
   </>
 }
 
