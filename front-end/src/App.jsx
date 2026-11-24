@@ -15,6 +15,7 @@ import GlossaryPage from './pages/learn/GlossaryPage.jsx'
 import LearnLayout from './pages/learn/LearnLayout.jsx'
 import LearnPage from './pages/learn/LearnPage.jsx'
 import LessonPage from './pages/learn/LessonPage.jsx'
+import CompanyQuotePage from './pages/market/CompanyQuotePage.jsx'
 import MarketPage from './pages/market/MarketPage.jsx'
 import StockDetailsPage from './pages/market/StockDetailsPage.jsx'
 import WatchlistPage from './pages/market/WatchlistPage.jsx'
@@ -53,6 +54,7 @@ function App() {
           <Route path="portfolio/transactions" element={<TransactionsPage />} />
           <Route path="portfolio/transactions/:transactionId" element={<TransactionDetailPage />} />
           <Route path="market" element={<MarketPage />} />
+          <Route path="market/quotes/:symbol" element={<CompanyQuotePage />} />
           <Route path="market/:symbol" element={<StockDetailsPage />} />
           <Route path="market/watchlist" element={<WatchlistPage />} />
           <Route path="market/:symbol/buy" element={<TradePage side="buy" />} />

@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useEffect, useRef, useState } from 'react'
 
 const errorMessages = {
@@ -62,7 +63,7 @@ export default function MarketSearch() {
         <button type="submit" disabled={state.status === 'loading'} className="rounded-xl bg-accent px-5 py-3 font-semibold disabled:opacity-50">Search</button>
         <button type="button" onClick={() => clearSearch()} className="rounded-xl border border-border px-4 py-3">Clear</button>
       </div>
-      <p id="search-help" className="mt-2 text-sm text-muted">Press Enter or Search to look up companies. Results do not include prices or trading.</p>
+      <p id="search-help" className="mt-2 text-sm text-muted">Press Enter or Search to look up companies. Open a result to view an end-of-day quote. Search results are not available for trading.</p>
     </form>
     {state.status === 'loading' && <p role="status" className="mt-4">Searching for {state.query}…</p>}
     {state.status === 'error' && <p role="alert" className="mt-4">{state.message}</p>}
@@ -70,7 +71,9 @@ export default function MarketSearch() {
       <p role="status" className="mb-2 text-sm text-muted">{state.results.length ? `${state.results.length} results for ${state.query}` : `No companies found for ${state.query}. Try another name or ticker.`}</p>
       <ul className="divide-y divide-border rounded-xl border border-border">
         {state.results.map((result, index) => <li key={`${result.symbol}-${index}`} className="px-4 py-3">
-          <span className="font-semibold">{result.symbol}</span><span className="ml-3">{result.name}</span>
+          <Link to={`/market/quotes/${encodeURIComponent(result.symbol)}`} className="font-semibold">
+            {result.symbol}<span className="ml-3 font-normal">{result.name}</span>
+          </Link>
         </li>)}
       </ul>
     </div>}
