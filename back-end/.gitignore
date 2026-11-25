@@ -1,6 +1,7 @@
 node_modules/
 coverage/
 .env
+.cache/
 
 # Keep backend installs reproducible despite the repository-wide lockfile ignore.
 !package-lock.json

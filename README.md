@@ -511,6 +511,7 @@ limits quote requests in flight to three, and pauses new requests for one
 minute after a quota response. Search and quotes share the provider's account
 quota; this is not a shared daily budget or public access control.
 
+
 ### Account watchlist (#89)
 
 Set the team MongoDB Atlas connection string as `MONGODB_URI` in
@@ -530,3 +531,12 @@ To verify against Atlas, register a test account, save AAPL twice, restart the
 backend and sign back in. AAPL should appear once. Check that a second account
 has an empty list, then remove AAPL from the first account. Add a server-side
 `ALPHA_VANTAGE_API_KEY` to verify price and daily change against the provider.
+
+### Price history and trading searched tickers
+
+`GET /api/stocks/AAPL/history` returns end-of-day closing prices (up to about 100 trading days) from Alpha Vantage `TIME_SERIES_DAILY`, using the same server-only `ALPHA_VANTAGE_API_KEY`. The quote page uses it for the Week, Month and All chart. Buy and Sell on a searched ticker use the end-of-day quote. Prices are never live.
+
+Setup for searched tickers, quotes and charts: copy `back-end/.env.example` to `back-end/.env`, set your own `ALPHA_VANTAGE_API_KEY`, then restart the backend. Never commit the key. Without a key the back end returns 503 for these routes, and the practice stocks still work. The tests use simulated responses and need no key.
+
+Limits: the free key allows 25 requests per day, shared by search, quote and history. If the provider refuses a request, the page shows an error and the quote and Buy/Sell can still work. After a back-end restart, saved results in `back-end/.cache/` (ignored by git) are reused only while fresh: quotes for 15 minutes, history for 6 hours. The back end waits up to 15 seconds for a quote or history reply and 10 seconds for a search. Practice trades stay in browser localStorage.
+

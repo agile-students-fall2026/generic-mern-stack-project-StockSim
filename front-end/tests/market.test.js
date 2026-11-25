@@ -17,6 +17,7 @@ test('chart periods return distinct chronological windows without changing data'
   assert.deepEqual(chartHistory(stock, 'Day'), stock.intraday)
   assert.equal(chartHistory(stock, 'Week').length, 7)
   assert.equal(chartHistory(stock, 'Week')[0].price, 7)
+  assert.equal(chartHistory(stock, 'Month').length, 14)
   assert.equal(chartHistory(stock, 'All').length, 14)
   assert.equal(stock.history.length, 14)
 })
