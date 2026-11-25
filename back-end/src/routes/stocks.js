@@ -7,7 +7,9 @@ import { createStockSearch, StockSearchError } from '../services/stockSearch.js'
 
 const savedCopy = (name) => createDiskCache(fileURLToPath(new URL(`../../.cache/${name}.json`, import.meta.url)))
 
-export function createStocksRouter({ search = createStockSearch(), quote = createStockQuote({ store: savedCopy('quotes') }), history = createStockHistory({ store: savedCopy('history') }) } = {}) {
+export const createSavedQuote = () => createStockQuote({ store: savedCopy('quotes') })
+
+export function createStocksRouter({ search = createStockSearch(), quote = createSavedQuote(), history = createStockHistory({ store: savedCopy('history') }) } = {}) {
   const router = Router()
   router.get('/search', async (req, res, next) => {
     const query = typeof req.query.q === 'string' ? req.query.q.trim() : ''

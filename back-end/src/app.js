@@ -6,15 +6,14 @@ import createAuthRouter from './routes/auth.js'
 import { requireAuth } from './middleware/requireAuth.js'
 import { trustedOrigin } from './middleware/trustedOrigin.js'
 import { createWatchlistRouter } from './routes/watchlist.js'
-import { createStockQuote } from './services/stockQuote.js'
-import { createStocksRouter } from './routes/stocks.js'
+import { createSavedQuote, createStocksRouter } from './routes/stocks.js'
 import { createMemoryUserStore } from './stores/memoryUserStore.js'
 import { createHoldingsRouter } from './routes/holdings.js'
 import { createLessonsRouter } from './routes/lessons.js'
 import { createGlossaryRouter } from './routes/glossary.js'
 import { createPortfolioRouter } from './routes/portfolio.js'
 
-export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery, watchlistStore, quote = createStockQuote() } = {}) {
+export function createApp({ userStore = createMemoryUserStore(), sessions = createSessionService(), recovery, watchlistStore, quote = createSavedQuote() } = {}) {
   recovery ??= createPasswordRecovery({ userStore, sessions })
   const app = express()
 
