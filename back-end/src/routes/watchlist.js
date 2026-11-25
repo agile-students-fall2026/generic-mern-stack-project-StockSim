@@ -3,8 +3,7 @@ import { normalizeStockSymbol } from '../services/stockQuote.js'
 
 const maxItems = 10
 
-// Not mounted by createApp. Only a server-verified session resolver and a durable
-// store with atomic per-user deduplication / capacity enforcement may wire this up.
+// Wire up only with a trusted session resolver and a durable per-user store.
 export function createWatchlistRouter({ getAuthenticatedUserId, store, quote }) {
   if (typeof getAuthenticatedUserId !== 'function' || typeof quote !== 'function'
     || !['list', 'add', 'remove'].every(method => typeof store?.[method] === 'function')) {

@@ -511,6 +511,27 @@ limits quote requests in flight to three, and pauses new requests for one
 minute after a quota response. Search and quotes share the provider's account
 quota; this is not a shared daily budget or public access control.
 
+
+### Account watchlist (#89)
+
+Set the team MongoDB Atlas connection string as `MONGODB_URI` in
+`back-end/.env` (not committed). The backend uses Mongoose and stores account
+records and their watchlists in the configured database. When switching from
+the old memory-only setup, create an account again; in-memory accounts were
+never persisted. If no URI is set, the old practice demo still works but the
+account watchlist API returns 503.
+
+- `GET /api/watchlist` lists your symbols with the latest available end-of-day price and change.
+- `POST /api/watchlist` with `{"symbol":"AAPL"}` saves it once (maximum 10 per account).
+- `DELETE /api/watchlist/AAPL` removes it. All three operations require a verified login session when enabled.
+- In Market, open a company quote and click **Save AAPL to watchlist**. View or remove it in **Account watchlist**. The separate practice watchlist is browser-local.
+- An unavailable provider quote does not remove a saved symbol. If the server is restarted, sign in again; session tokens are still managed in memory.
+
+To verify against Atlas, register a test account, save AAPL twice, restart the
+backend and sign back in. AAPL should appear once. Check that a second account
+has an empty list, then remove AAPL from the first account. Add a server-side
+`ALPHA_VANTAGE_API_KEY` to verify price and daily change against the provider.
+
 ### Price history and trading searched tickers
 
 `GET /api/stocks/AAPL/history` returns end-of-day closing prices (up to about 100 trading days) from Alpha Vantage `TIME_SERIES_DAILY`, using the same server-only `ALPHA_VANTAGE_API_KEY`. The quote page uses it for the Week, Month and All chart. Buy and Sell on a searched ticker use the end-of-day quote. Prices are never live.
@@ -519,27 +540,3 @@ Setup for searched tickers, quotes and charts: copy `back-end/.env.example` to `
 
 Limits: the free key allows 25 requests per day, shared by search, quote and history. If the provider refuses a request, the page shows an error and the quote and Buy/Sell can still work. After a back-end restart, saved results in `back-end/.cache/` (ignored by git) are reused only while fresh: quotes for 15 minutes, history for 6 hours. The back end waits up to 15 seconds for a quote or history reply and 10 seconds for a search. Practice trades stay in browser localStorage.
 
-### Watchlist backend groundwork (#89)
-
-The watchlist router is intentionally **not mounted**. It can list, add
-and remove symbols for one verified user, prevent duplicates through the
-store contract, and return saved items even when individual quotes fail.
-It does not change the frontend practice watchlist.
-
-Before mounting at `/api/watchlist`:
-
-- Connect to #78's verified sessions. `getAuthenticatedUserId(req)` must
-  resolve a stable account ID from the server-verified session, never from
-  request-supplied IDs. For cookie sessions, require CSRF protection for
-  mutations. Unauthenticated requests return 401.
-- Supply a durable team database adapter: `list(userId)` returns that user's
-  bounded, unique symbol list; `add(userId, symbol, limit)` atomically checks
-  existence and capacity, returning `added`, `exists`, or `full`. Enforce atomic
-  uniqueness on (userId, symbol), and idempotently implement
-  `remove(userId, symbol)` scoped to that same user.
-- Pass the same server quote service to both routes to share cache and
-  in-flight protections. Watchlist entries with unavailable quotes preserve
-  their symbols and have null price/change rather than invented values.
-
-The tests use simulated quote responses and a test-only store. A real provider
-key, a production session/store adapter, and deployment are not verified here.
