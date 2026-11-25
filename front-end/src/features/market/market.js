@@ -8,5 +8,6 @@ export function searchStocks(stocks, query) {
 export function chartHistory(stock, period) {
   if (period === 'Day') return stock.intraday
   if (period === 'Week') return stock.history.slice(-7)
+  if (period === 'Month') return stock.history.slice(-30)
   return stock.history
 }

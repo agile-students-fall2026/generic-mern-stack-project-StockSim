@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { emptyAccount, executeTrade } from '../src/features/market/practice.js'
-import { selectPortfolio, selectTransactions, withinTransactionRange } from '../src/features/market/portfolio.js'
+import { selectPortfolio, selectTransactions, withinTransactionRange, withQuotedStocks } from '../src/features/market/portfolio.js'
 
 const nova = { symbol: 'NOVA', name: 'Nova Labs', price: 125 }
 const date = '2026-11-04T12:00:00.000Z'
@@ -91,4 +91,18 @@ test('transaction date filters follow the current date, exclude future dates and
   assert.equal(withinTransactionRange('2026-12-16T12:00:00Z', '1M', now), false)
   assert.equal(withinTransactionRange('invalid', '1M', now), false)
   assert.equal(withinTransactionRange('2026-01-01T12:00:00Z', 'ALL', now), true)
+})
+
+test('holdings outside the practice market are valued only from fetched quotes', () => {
+  const aapl = { symbol: 'AAPL', name: 'AAPL', price: 200 }
+  const bought = executeTrade(emptyAccount, aapl, 'buy', 2, 'a', date)
+  const without = selectPortfolio(bought, withQuotedStocks([nova], {}))
+  assert.deepEqual(without.unpricedSymbols, ['AAPL'])
+  assert.equal(without.portfolio.totalValue, null)
+  const view = selectPortfolio(bought, withQuotedStocks([nova], { AAPL: 210 }))
+  assert.deepEqual(view.unpricedSymbols, [])
+  assert.equal(view.holdingsValue, 420)
+  assert.equal(view.portfolio.totalValue, 10020)
+  assert.equal(view.holdings[0].averagePrice, 200)
+  assert.deepEqual(withQuotedStocks([nova], { NOVA: 1 }), [nova])
 })

@@ -63,7 +63,7 @@ export default function MarketSearch() {
         <button type="submit" disabled={state.status === 'loading'} className="rounded-xl bg-accent px-5 py-3 font-semibold disabled:opacity-50">Search</button>
         <button type="button" onClick={() => clearSearch()} className="rounded-xl border border-border px-4 py-3">Clear</button>
       </div>
-      <p id="search-help" className="mt-2 text-sm text-muted">Press Enter or Search to look up companies. Open a result to view an end-of-day quote. Search results are not available for trading.</p>
+      <p id="search-help" className="mt-2 text-sm text-muted">Press Enter or Search to look up companies. Open a result to view its end-of-day quote and buy or sell with virtual money.</p>
     </form>
     {state.status === 'loading' && <p role="status" className="mt-4">Searching for {state.query}…</p>}
     {state.status === 'error' && <p role="alert" className="mt-4">{state.message}</p>}

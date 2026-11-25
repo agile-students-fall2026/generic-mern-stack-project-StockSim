@@ -60,3 +60,11 @@ export function withinTransactionRange(date, range, now = new Date()) {
   cutoff.setDate(cutoff.getDate() - (range === '1M' ? 30 : 90))
   return timestamp >= cutoff.getTime() && timestamp <= now.getTime()
 }
+
+export function withQuotedStocks(stocks, prices) {
+  const known = new Set(stocks.map((stock) => stock.symbol))
+  const quoted = Object.entries(prices)
+    .filter(([symbol]) => !known.has(symbol))
+    .map(([symbol, price]) => ({ symbol, name: symbol, price }))
+  return [...stocks, ...quoted]
+}
